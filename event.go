@@ -2,7 +2,6 @@ package main
 
 import (
 	"encoding/json"
-	"github.com/gorilla/websocket"
 )
 
 var (
@@ -31,25 +30,25 @@ type websocketEvent struct {
 	Data map[string]any `json:"data"`
 }
 
-func handleIncomingEvents(p player, g *game) {
+func handleIncomingEvents(p player, g game) {
 	for {
 		var we websocketEvent
 		err := p.ReadJSON(&we)
 		if err != nil {
-			logNonFatal(p.WriteMessage(websocket.TextMessage, []byte(err.Error())))
+			p.writeError(err)
 			return
 		}
 
 		data, err := json.Marshal(we.Data)
 		if err != nil {
-			logNonFatal(p.WriteMessage(websocket.TextMessage, []byte(err.Error())))
+			p.writeError(err)
 			return
 		}
 
 		e := eventsByName[we.Type](p)
 		err = json.Unmarshal(data, e)
 		if err != nil {
-			logNonFatal(p.WriteMessage(websocket.TextMessage, []byte(err.Error())))
+			p.writeError(err)
 			return
 		}
 

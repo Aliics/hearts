@@ -32,7 +32,7 @@ func main() {
 
 func createGame(w http.ResponseWriter, _ *http.Request) {
 	id := uuid.New()
-	g := &game{events: make(chan event, 10)}
+	g := game{events: make(chan event, 10)}
 	games[id] = g
 
 	go g.run()
@@ -55,9 +55,7 @@ func playGame(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		return
 	}
-	defer func() {
-		logNonFatal(conn.Close())
-	}()
+	defer func() { logNonFatal(conn.Close()) }()
 
 	p := player{Conn: conn}
 	g.connectPlayer(p)
