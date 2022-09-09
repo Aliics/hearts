@@ -1,0 +1,66 @@
+package main
+
+import (
+	"github.com/stretchr/testify/assert"
+	"testing"
+)
+
+func Test_newShuffledDeck(t *testing.T) {
+	deck := newShuffledDeck()
+
+	assert.Contains(t, deck, Card{SuitHearts, ValueTwo})
+	assert.Contains(t, deck, Card{SuitHearts, ValueThree})
+	assert.Contains(t, deck, Card{SuitHearts, ValueFour})
+	assert.Contains(t, deck, Card{SuitHearts, ValueFive})
+	assert.Contains(t, deck, Card{SuitHearts, ValueSix})
+	assert.Contains(t, deck, Card{SuitHearts, ValueSeven})
+	assert.Contains(t, deck, Card{SuitHearts, ValueEight})
+	assert.Contains(t, deck, Card{SuitHearts, ValueNine})
+	assert.Contains(t, deck, Card{SuitHearts, ValueTen})
+	assert.Contains(t, deck, Card{SuitHearts, ValueJack})
+	assert.Contains(t, deck, Card{SuitHearts, ValueQueen})
+	assert.Contains(t, deck, Card{SuitHearts, ValueKing})
+	assert.Contains(t, deck, Card{SuitHearts, ValueAce})
+
+	assert.NotContains(t, deck, Card{SuitDiamonds, ValueTwo})
+	assert.Contains(t, deck, Card{SuitDiamonds, ValueThree})
+	assert.Contains(t, deck, Card{SuitDiamonds, ValueFour})
+	assert.Contains(t, deck, Card{SuitDiamonds, ValueFive})
+	assert.Contains(t, deck, Card{SuitDiamonds, ValueSix})
+	assert.Contains(t, deck, Card{SuitDiamonds, ValueSeven})
+	assert.Contains(t, deck, Card{SuitDiamonds, ValueEight})
+	assert.Contains(t, deck, Card{SuitDiamonds, ValueNine})
+	assert.Contains(t, deck, Card{SuitDiamonds, ValueTen})
+	assert.Contains(t, deck, Card{SuitDiamonds, ValueJack})
+	assert.Contains(t, deck, Card{SuitDiamonds, ValueQueen})
+	assert.Contains(t, deck, Card{SuitDiamonds, ValueKing})
+	assert.Contains(t, deck, Card{SuitDiamonds, ValueAce})
+
+	assert.Contains(t, deck, Card{SuitClubs, ValueTwo})
+	assert.Contains(t, deck, Card{SuitClubs, ValueThree})
+	assert.Contains(t, deck, Card{SuitClubs, ValueFour})
+	assert.Contains(t, deck, Card{SuitClubs, ValueFive})
+	assert.Contains(t, deck, Card{SuitClubs, ValueSix})
+	assert.Contains(t, deck, Card{SuitClubs, ValueSeven})
+	assert.Contains(t, deck, Card{SuitClubs, ValueEight})
+	assert.Contains(t, deck, Card{SuitClubs, ValueNine})
+	assert.Contains(t, deck, Card{SuitClubs, ValueTen})
+	assert.Contains(t, deck, Card{SuitClubs, ValueJack})
+	assert.Contains(t, deck, Card{SuitClubs, ValueQueen})
+	assert.Contains(t, deck, Card{SuitClubs, ValueKing})
+	assert.Contains(t, deck, Card{SuitClubs, ValueAce})
+
+	assert.Contains(t, deck, Card{SuitSpades, ValueTwo})
+	assert.Contains(t, deck, Card{SuitSpades, ValueThree})
+	assert.Contains(t, deck, Card{SuitSpades, ValueFour})
+	assert.Contains(t, deck, Card{SuitSpades, ValueFive})
+	assert.Contains(t, deck, Card{SuitSpades, ValueSix})
+	assert.Contains(t, deck, Card{SuitSpades, ValueSeven})
+	assert.Contains(t, deck, Card{SuitSpades, ValueEight})
+	assert.Contains(t, deck, Card{SuitSpades, ValueNine})
+	assert.Contains(t, deck, Card{SuitSpades, ValueTen})
+	assert.Contains(t, deck, Card{SuitSpades, ValueJack})
+	assert.Contains(t, deck, Card{SuitSpades, ValueQueen})
+	assert.Contains(t, deck, Card{SuitSpades, ValueKing})
+	assert.Contains(t, deck, Card{SuitSpades, ValueAce})
+}

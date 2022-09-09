@@ -4,8 +4,6 @@ import (
 	"encoding/json"
 	"errors"
 	"github.com/google/uuid"
-	"github.com/gorilla/websocket"
-	"time"
 )
 
 var (
@@ -28,23 +26,7 @@ func (g game) run() {
 				return
 			}
 
-			suitMatches := true
-			for _, card := range g.inPlay {
-				if card.Suit != e.Card.Suit {
-					suitMatches = false
-					break
-				}
-			}
-
-			var playerHasSuit bool
-			for _, card := range e.player().hand {
-				if card.Suit == e.Card.Suit {
-					playerHasSuit = true
-					break
-				}
-			}
-
-			if !suitMatches && playerHasSuit {
+			if validCardPlayed(g.inPlay, *e) {
 				e.player().writeOutboundEventMessage(outboundEventClientViolation, "cannot play off suit")
 				continue
 			}
@@ -53,7 +35,7 @@ func (g game) run() {
 
 			for _, p := range g.players {
 				inPlay, err := json.Marshal(g.inPlay)
-				logNonFatal(err) // TODO: Handle more gracefully?
+				logNonFatal(err)
 				p.writeOutboundEvent(outboundEventGameUpdate, map[string]any{"inPlay": inPlay})
 			}
 		case connectPlayerInboundEvent:
@@ -69,6 +51,15 @@ func (g game) run() {
 					"gameReady":   len(g.players) == 3,
 				})
 			}
+
+			if len(g.players) == 3 {
+				deck := newShuffledDeck()
+				handSize := len(deck) / 3
+				for i, p := range g.players {
+					p.hand = deck[handSize*i : handSize*(i+1)]
+					p.writeOutboundEvent(outboundEventGameUpdate, map[string]any{"hand": p.hand})
+				}
+			}
 		default:
 			e.player().writeCloseMessageError(errors.New("inboundEvent handler not found"))
 		}
@@ -79,25 +70,26 @@ func (g game) connectPlayer(p player) {
 	g.inboundEvents <- connectPlayerInboundEvent(p)
 }
 
-type player struct {
-	*websocket.Conn
-	id   uuid.UUID
-	hand []Card
-}
+func validCardPlayed(inPlay []Card, event playCardInboundEvent) bool {
+	if len(inPlay) == 0 {
+		return true // It can be anything your heart desires.
+	}
 
-func (p player) writeOutboundEventMessage(eventType outboundEventType, msg string) {
-	p.writeOutboundEvent(eventType, map[string]any{"msg": msg})
-}
+	suitMatches := true
+	for _, c := range inPlay {
+		if c.Suit != event.Card.Suit {
+			suitMatches = false
+			break
+		}
+	}
 
-func (p player) writeOutboundEvent(eventType outboundEventType, data map[string]any) {
-	we, err := json.Marshal(websocketEvent{
-		Type: string(eventType),
-		Data: data,
-	})
-	logNonFatal(err)
-	logNonFatal(p.WriteMessage(websocket.TextMessage, we))
-}
+	var playerHasSuit bool
+	for _, c := range event.player().hand {
+		if c.Suit == inPlay[0].Suit {
+			playerHasSuit = true
+			break
+		}
+	}
 
-func (p player) writeCloseMessageError(err error) {
-	logNonFatal(p.WriteControl(websocket.CloseMessage, []byte(err.Error()), time.Now()))
+	return suitMatches || !playerHasSuit
 }
