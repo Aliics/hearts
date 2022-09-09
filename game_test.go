@@ -81,6 +81,17 @@ func Test_validCardPlayed(t *testing.T) {
 			},
 			true,
 		},
+		{
+			"player does not have card",
+			args{
+				nil,
+				playCardInboundEvent{
+					player{hand: []Card{{SuitDiamonds, ValueKing}}},
+					Card{SuitSpades, ValueKing},
+				},
+			},
+			true,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

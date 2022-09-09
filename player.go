@@ -13,8 +13,8 @@ type player struct {
 	hand []Card
 }
 
-func (p player) writeOutboundEventMessage(eventType outboundEventType, msg string) {
-	p.writeOutboundEvent(eventType, map[string]any{"msg": msg})
+func (p player) writeClientViolation(msg string) {
+	p.writeOutboundEvent(outboundEventClientViolation, map[string]any{"msg": msg})
 }
 
 func (p player) writeOutboundEvent(eventType outboundEventType, data map[string]any) {
