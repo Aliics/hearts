@@ -5,53 +5,60 @@ import (
 )
 
 var (
-	eventsByName = map[string]func(player) event{
-		"playCard": func(p player) event { return &playCardEvent{playedBy: p} },
+	inboundEventsByName = map[string]func(player) inboundEvent{
+		"playCard": func(p player) inboundEvent { return &playCardInboundEvent{playedBy: p} },
 	}
 )
 
-type event interface {
+type inboundEvent interface {
 	player() player
 }
 
-type connectPlayerEvent player
+type connectPlayerInboundEvent player
 
-func (c connectPlayerEvent) player() player { return player(c) }
+func (c connectPlayerInboundEvent) player() player { return player(c) }
 
-type playCardEvent struct {
+type playCardInboundEvent struct {
 	playedBy player
 	Card     `json:"card"`
 }
 
-func (p playCardEvent) player() player { return p.playedBy }
+func (p playCardInboundEvent) player() player { return p.playedBy }
 
 type websocketEvent struct {
 	Type string         `json:"type"`
 	Data map[string]any `json:"data"`
 }
 
+type outboundEventType string
+
+const (
+	outboundEventClientViolation outboundEventType = "clientViolation"
+	outboundEventGameUpdate      outboundEventType = "gameUpdate"
+)
+
 func handleIncomingEvents(p player, g game) {
 	for {
 		var we websocketEvent
 		err := p.ReadJSON(&we)
 		if err != nil {
-			p.writeError(err)
+			p.writeCloseMessageError(err)
 			return
 		}
 
 		data, err := json.Marshal(we.Data)
 		if err != nil {
-			p.writeError(err)
+			p.writeCloseMessageError(err)
 			return
 		}
 
-		e := eventsByName[we.Type](p)
+		e := inboundEventsByName[we.Type](p)
 		err = json.Unmarshal(data, e)
 		if err != nil {
-			p.writeError(err)
+			p.writeCloseMessageError(err)
 			return
 		}
 
-		g.events <- e
+		g.inboundEvents <- e
 	}
 }

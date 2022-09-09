@@ -1,23 +1,23 @@
 package main
 
 type Card struct {
-	Suite `json:"suite"`
+	Suit  `json:"suit"`
 	Value `json:"value"`
 }
 
-type Suite uint8
+type Suit uint8
 
 const (
-	SuiteHearts = iota
-	SuiteDiamonds
-	SuiteClubs
-	SuiteSpades
+	SuitHearts Suit = iota
+	SuitDiamonds
+	SuitClubs
+	SuitSpades
 )
 
 type Value uint8
 
 const (
-	ValueTwo = iota
+	ValueTwo Value = iota
 	ValueThree
 	ValueFour
 	ValueFive
