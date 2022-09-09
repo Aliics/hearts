@@ -2,28 +2,29 @@ package main
 
 import (
 	"encoding/json"
+	"github.com/google/uuid"
 )
 
 var (
-	inboundEventsByName = map[string]func(player) inboundEvent{
-		"playCard": func(p player) inboundEvent { return &playCardInboundEvent{playedBy: p} },
+	inboundEventsByName = map[string]func(uuid.UUID) inboundEvent{
+		"playCard": func(id uuid.UUID) inboundEvent { return &playCardInboundEvent{playedBy: id} },
 	}
 )
 
 type inboundEvent interface {
-	player() player
+	playerId() uuid.UUID
 }
 
 type connectPlayerInboundEvent player
 
-func (c connectPlayerInboundEvent) player() player { return player(c) }
+func (c connectPlayerInboundEvent) playerId() uuid.UUID { return c.id }
 
 type playCardInboundEvent struct {
-	playedBy player
+	playedBy uuid.UUID
 	Card     `json:"card"`
 }
 
-func (p playCardInboundEvent) player() player { return p.playedBy }
+func (p playCardInboundEvent) playerId() uuid.UUID { return p.playedBy }
 
 type websocketEvent struct {
 	Type string         `json:"type"`
@@ -52,7 +53,7 @@ func handleIncomingEvents(p player, g game) {
 			return
 		}
 
-		e := inboundEventsByName[we.Type](p)
+		e := inboundEventsByName[we.Type](p.id)
 		err = json.Unmarshal(data, e)
 		if err != nil {
 			p.writeCloseMessageError(err)

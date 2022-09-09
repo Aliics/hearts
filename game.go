@@ -16,22 +16,29 @@ var (
 
 type game struct {
 	inboundEvents   chan inboundEvent
-	players         []player
+	players         []*player
 	inPlay          []Card
 	currentPlayerId uuid.UUID
 }
 
 func (g game) run() {
 	for x := range g.inboundEvents {
+		p := g.playerFromId(x.playerId())
+
 		switch e := x.(type) {
 		case *playCardInboundEvent:
-			if e.player().id != g.currentPlayerId {
-				e.player().writeClientViolation("cannot play out of turn")
+			if len(g.players) < fullGameCount {
+				p.writeClientViolation("cannot play without a full game")
 				continue
 			}
 
-			if !validCardPlayed(g.inPlay, *e) {
-				e.player().writeClientViolation("cannot play off suit")
+			if e.playerId() != g.currentPlayerId {
+				p.writeClientViolation("cannot play out of turn")
+				continue
+			}
+
+			if !validCardPlayed(g.inPlay, p.hand, e.Card) {
+				p.writeClientViolation("invalid card")
 				continue
 			}
 
@@ -55,11 +62,12 @@ func (g game) run() {
 			g.broadcastUpdate(map[string]any{"currentPlayerNum": g.currentPlayerId})
 		case connectPlayerInboundEvent:
 			if len(g.players) == fullGameCount {
-				e.player().writeCloseMessageError(errors.New("game is full"))
+				p.writeCloseMessageError(errors.New("game is full"))
 				continue
 			}
 
-			g.players = append(g.players, player(e))
+			newPlayer := player(e)
+			g.players = append(g.players, &newPlayer)
 
 			g.broadcastUpdate(map[string]any{
 				"playerCount": len(g.players),
@@ -78,7 +86,7 @@ func (g game) run() {
 				g.broadcastUpdate(map[string]any{"currentPlayerNum": g.currentPlayerId})
 			}
 		default:
-			e.player().writeCloseMessageError(errors.New("inboundEvent handler not found"))
+			p.writeCloseMessageError(errors.New("inboundEvent handler not found"))
 		}
 	}
 }
@@ -93,25 +101,31 @@ func (g game) broadcastUpdate(msg map[string]any) {
 	}
 }
 
-func validCardPlayed(inPlay []Card, event playCardInboundEvent) bool {
-	if len(inPlay) == 0 {
-		return true // It can be anything your heart desires.
+func (g game) playerFromId(id uuid.UUID) *player {
+	var found *player
+	for _, p := range g.players {
+		if p.id == id {
+			found = p
+		}
 	}
+	return found
+}
 
+func validCardPlayed(inPlay []Card, hand []Card, played Card) bool {
 	suitMatches := true
 	for _, c := range inPlay {
-		if c.Suit != event.Card.Suit {
+		if c.Suit != played.Suit {
 			suitMatches = false
 			break
 		}
 	}
 
 	var playerHasMatchingSuit, playerHasCard bool
-	for _, c := range event.player().hand {
-		if c.Suit == inPlay[0].Suit {
+	for _, c := range hand {
+		if len(inPlay) > 0 && c.Suit == inPlay[0].Suit {
 			playerHasMatchingSuit = true
 		}
-		if reflect.DeepEqual(c, event.Card) {
+		if reflect.DeepEqual(c, played) {
 			playerHasCard = true
 		}
 	}

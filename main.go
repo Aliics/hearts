@@ -49,7 +49,11 @@ func playGame(w http.ResponseWriter, r *http.Request) {
 		logNonFatal(err)
 		return
 	}
-	g := games[id]
+	g, gameFound := games[id]
+	if !gameFound {
+		w.WriteHeader(http.StatusNotFound)
+		return
+	}
 
 	conn, err := wsUpgrader.Upgrade(w, r, nil)
 	if err != nil {

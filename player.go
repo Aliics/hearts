@@ -27,5 +27,9 @@ func (p player) writeOutboundEvent(eventType outboundEventType, data map[string]
 }
 
 func (p player) writeCloseMessageError(err error) {
-	logNonFatal(p.WriteControl(websocket.CloseMessage, []byte(err.Error()), time.Now()))
+	logNonFatal(p.WriteControl(
+		websocket.CloseMessage,
+		[]byte(err.Error()),
+		time.Now().Add(time.Second),
+	))
 }
