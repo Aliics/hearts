@@ -1,8 +1,13 @@
 package main
 
-import "math/rand"
+import (
+	"math/rand"
+	"time"
+)
 
 func newShuffledDeck() []Card {
+	rand.Seed(time.Now().UnixNano())
+
 	var cards []Card
 	for suit := SuitHearts; suit <= SuitSpades; suit++ {
 		for value := ValueTwo; value <= ValueAce; value++ {
