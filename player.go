@@ -18,7 +18,7 @@ func (p player) writeClientViolation(msg string) {
 }
 
 func (p player) writeOutboundEvent(eventType outboundEventType, data map[string]any) {
-	we, err := json.Marshal(websocketEvent{
+	we, err := json.Marshal(websocketMessage{
 		Type: string(eventType),
 		Data: data,
 	})
@@ -29,7 +29,7 @@ func (p player) writeOutboundEvent(eventType outboundEventType, data map[string]
 func (p player) writeCloseMessageError(err error) {
 	logNonFatal(p.WriteControl(
 		websocket.CloseMessage,
-		[]byte(err.Error()),
+		websocket.FormatCloseMessage(websocket.CloseInternalServerErr, err.Error()),
 		time.Now().Add(time.Second),
 	))
 }

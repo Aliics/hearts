@@ -19,6 +19,7 @@ type game struct {
 	players         []*player
 	inPlay          []Card
 	currentPlayerId uuid.UUID
+	points          [3]int
 }
 
 func (g game) run() {
@@ -26,7 +27,7 @@ func (g game) run() {
 		p := g.playerFromId(x.playerId())
 
 		switch e := x.(type) {
-		case *playCardInboundEvent:
+		case playCardInboundEvent:
 			if len(g.players) < fullGameCount {
 				p.writeClientViolation("cannot play without a full game")
 				continue
@@ -37,29 +38,58 @@ func (g game) run() {
 				continue
 			}
 
-			if !validCardPlayed(g.inPlay, p.hand, e.Card) {
+			cardIndex := indexOfValidPlayedCard(g.inPlay, p.hand, e.card)
+			if cardIndex == -1 {
 				p.writeClientViolation("invalid card")
 				continue
 			}
 
-			g.inPlay = append(g.inPlay, e.Card)
-
+			// Current cards in play for the round.
+			g.inPlay = append(g.inPlay, e.card)
 			g.broadcastUpdate(map[string]any{"inPlay": g.inPlay})
 
-			var currentIndex int
-			for i, p := range g.players {
-				if p.id == g.currentPlayerId {
-					currentIndex = i
-					break
-				}
-			}
-			if currentIndex < fullGameCount-1 {
-				g.currentPlayerId = g.players[currentIndex+1].id
-			} else {
-				g.currentPlayerId = g.players[0].id
-			}
+			// Player loses card played from their hand.
+			p.hand = append(p.hand[:cardIndex], p.hand[cardIndex+1:]...)
+			p.writeOutboundEvent(outboundEventGameUpdate, map[string]any{"hand": p.hand})
 
-			g.broadcastUpdate(map[string]any{"currentPlayerNum": g.currentPlayerId})
+			if len(g.inPlay) < fullGameCount {
+				// Simply rotate players.
+				var currentIndex int
+				for i, p := range g.players {
+					if p.id == g.currentPlayerId {
+						currentIndex = i
+						break
+					}
+				}
+				if currentIndex < fullGameCount-1 {
+					g.currentPlayerId = g.players[currentIndex+1].id
+				} else {
+					g.currentPlayerId = g.players[0].id
+				}
+				g.broadcastUpdate(map[string]any{"currentPlayerId": g.currentPlayerId})
+			} else {
+				// Tally points for the "winner".
+				var (
+					pointsCount      int
+					highestCardIndex int
+					highestCard      = g.inPlay[0]
+				)
+				for i, c := range g.inPlay {
+					pointsCount += c.points()
+					if c.beats(highestCard) {
+						highestCardIndex = i
+						highestCard = c
+					}
+				}
+
+				g.inPlay = nil
+				g.points[highestCardIndex] += pointsCount
+				g.currentPlayerId = g.players[highestCardIndex].id
+				g.broadcastUpdate(map[string]any{
+					"currentPlayerId": g.currentPlayerId,
+					"points":          g.points,
+				})
+			}
 		case connectPlayerInboundEvent:
 			if len(g.players) == fullGameCount {
 				p.writeCloseMessageError(errors.New("game is full"))
@@ -83,7 +113,7 @@ func (g game) run() {
 				}
 
 				g.currentPlayerId = g.players[0].id
-				g.broadcastUpdate(map[string]any{"currentPlayerNum": g.currentPlayerId})
+				g.broadcastUpdate(map[string]any{"currentPlayerId": g.currentPlayerId})
 			}
 		default:
 			p.writeCloseMessageError(errors.New("inboundEvent handler not found"))
@@ -111,24 +141,28 @@ func (g game) playerFromId(id uuid.UUID) *player {
 	return found
 }
 
-func validCardPlayed(inPlay []Card, hand []Card, played Card) bool {
-	suitMatches := true
-	for _, c := range inPlay {
-		if c.Suit != played.Suit {
-			suitMatches = false
-			break
-		}
-	}
-
-	var playerHasMatchingSuit, playerHasCard bool
-	for _, c := range hand {
-		if len(inPlay) > 0 && c.Suit == inPlay[0].Suit {
-			playerHasMatchingSuit = true
-		}
+// indexOfValidPlayedCard finds the index of the played card
+// with the following conditions:
+//
+//		The played card must be in "hand" and...
+//		   1. The played card must be in "inPlay"
+//	    or
+//		   2. The played card's suit must not be in "inPlay"
+func indexOfValidPlayedCard(inPlay []Card, hand []Card, played Card) int {
+	cardIndex := -1
+	inPlaySuitInHand := false
+	for i, c := range hand {
 		if reflect.DeepEqual(c, played) {
-			playerHasCard = true
+			cardIndex = i
+		}
+		if len(inPlay) > 0 && c.Suit == inPlay[0].Suit {
+			inPlaySuitInHand = true
 		}
 	}
 
-	return playerHasCard && (suitMatches || !playerHasMatchingSuit)
+	if len(inPlay) == 0 || played.Suit == inPlay[0].Suit || !inPlaySuitInHand {
+		return cardIndex
+	} else {
+		return -1
+	}
 }

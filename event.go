@@ -5,10 +5,22 @@ import (
 	"github.com/google/uuid"
 )
 
-var (
-	inboundEventsByName = map[string]func(uuid.UUID) inboundEvent{
-		"playCard": func(id uuid.UUID) inboundEvent { return &playCardInboundEvent{playedBy: id} },
-	}
+type websocketMessage struct {
+	Type string         `json:"type"`
+	Data map[string]any `json:"data"`
+}
+
+type inboundEventType string
+
+const (
+	inboundEventPlayCard inboundEventType = "playCard"
+)
+
+type outboundEventType string
+
+const (
+	outboundEventClientViolation outboundEventType = "clientViolation"
+	outboundEventGameUpdate      outboundEventType = "gameUpdate"
 )
 
 type inboundEvent interface {
@@ -21,45 +33,38 @@ func (c connectPlayerInboundEvent) playerId() uuid.UUID { return c.id }
 
 type playCardInboundEvent struct {
 	playedBy uuid.UUID
-	Card     `json:"card"`
+	card     Card
 }
 
 func (p playCardInboundEvent) playerId() uuid.UUID { return p.playedBy }
 
-type websocketEvent struct {
-	Type string         `json:"type"`
-	Data map[string]any `json:"data"`
-}
-
-type outboundEventType string
-
-const (
-	outboundEventClientViolation outboundEventType = "clientViolation"
-	outboundEventGameUpdate      outboundEventType = "gameUpdate"
-)
-
-func handleIncomingEvents(p player, g game) {
+func handleWebsocketMessages(p player, g game) {
 	for {
-		var we websocketEvent
-		err := p.ReadJSON(&we)
+		var wm websocketMessage
+		err := p.ReadJSON(&wm)
 		if err != nil {
-			p.writeCloseMessageError(err)
-			return
+			p.writeClientViolation(err.Error())
+			continue
 		}
 
-		data, err := json.Marshal(we.Data)
-		if err != nil {
-			p.writeCloseMessageError(err)
-			return
-		}
+		switch inboundEventType(wm.Type) {
+		case inboundEventPlayCard:
+			cardMap, hasCard := wm.Data["card"]
+			if !hasCard {
+				p.writeClientViolation("card object is missing")
+				continue
+			}
 
-		e := inboundEventsByName[we.Type](p.id)
-		err = json.Unmarshal(data, e)
-		if err != nil {
-			p.writeCloseMessageError(err)
-			return
-		}
+			cardJson, err := json.Marshal(cardMap)
+			if err != nil {
+				p.writeClientViolation(err.Error())
+				continue
+			}
 
-		g.inboundEvents <- e
+			var card Card
+			logNonFatal(json.Unmarshal(cardJson, &card))
+
+			g.inboundEvents <- playCardInboundEvent{p.id, card}
+		}
 	}
 }

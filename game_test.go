@@ -14,7 +14,7 @@ func Test_validCardPlayed(t *testing.T) {
 	tests := []struct {
 		name string
 		args args
-		want bool
+		want int
 	}{
 		{
 			"last card and nothing played",
@@ -23,7 +23,7 @@ func Test_validCardPlayed(t *testing.T) {
 				[]Card{{SuitDiamonds, ValueAce}},
 				Card{SuitDiamonds, ValueAce},
 			},
-			true,
+			0,
 		},
 		{
 			"last card and different suit played",
@@ -32,7 +32,7 @@ func Test_validCardPlayed(t *testing.T) {
 				[]Card{{SuitDiamonds, ValueAce}},
 				Card{SuitDiamonds, ValueAce},
 			},
-			true,
+			0,
 		},
 		{
 			"many cards of suit and nothing played",
@@ -41,7 +41,7 @@ func Test_validCardPlayed(t *testing.T) {
 				[]Card{{SuitDiamonds, ValueKing}, {SuitDiamonds, ValueAce}},
 				Card{SuitDiamonds, ValueAce},
 			},
-			true,
+			1,
 		},
 		{
 			"many cards of suit and cards played",
@@ -50,7 +50,7 @@ func Test_validCardPlayed(t *testing.T) {
 				[]Card{{SuitDiamonds, ValueKing}, {SuitDiamonds, ValueAce}},
 				Card{SuitDiamonds, ValueAce},
 			},
-			true,
+			1,
 		},
 		{
 			"not matching suits but suit is in hand",
@@ -59,7 +59,7 @@ func Test_validCardPlayed(t *testing.T) {
 				[]Card{{SuitDiamonds, ValueKing}, {SuitSpades, ValueSeven}},
 				Card{SuitDiamonds, ValueKing},
 			},
-			false,
+			-1,
 		},
 		{
 			"not matching suits but no suit in hand",
@@ -68,7 +68,7 @@ func Test_validCardPlayed(t *testing.T) {
 				[]Card{{SuitDiamonds, ValueKing}},
 				Card{SuitDiamonds, ValueKing},
 			},
-			true,
+			0,
 		},
 		{
 			"playerId does not have card",
@@ -77,12 +77,12 @@ func Test_validCardPlayed(t *testing.T) {
 				[]Card{{SuitDiamonds, ValueKing}},
 				Card{SuitSpades, ValueKing},
 			},
-			false,
+			-1,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			assert.Equal(t, tt.want, validCardPlayed(tt.args.inPlay, tt.args.hand, tt.args.played))
+			assert.Equal(t, tt.want, indexOfValidPlayedCard(tt.args.inPlay, tt.args.hand, tt.args.played))
 		})
 	}
 }

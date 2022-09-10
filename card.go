@@ -2,6 +2,7 @@ package main
 
 import (
 	"math/rand"
+	"reflect"
 	"time"
 )
 
@@ -28,6 +29,19 @@ func newShuffledDeck() []Card {
 type Card struct {
 	Suit  `json:"suit"`
 	Value `json:"value"`
+}
+
+func (c Card) points() int {
+	if c.Suit == SuitHearts {
+		return 1
+	} else if reflect.DeepEqual(c, Card{SuitSpades, ValueQueen}) {
+		return 13
+	}
+	return 0
+}
+
+func (c Card) beats(other Card) bool {
+	return c.Suit == other.Suit && c.Value > other.Value
 }
 
 type Suit uint8
