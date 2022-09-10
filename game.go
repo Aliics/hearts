@@ -1,8 +1,8 @@
 package main
 
 import (
-	"errors"
 	"github.com/google/uuid"
+	"log"
 	"reflect"
 )
 
@@ -19,15 +19,14 @@ type game struct {
 	players         []*player
 	inPlay          []Card
 	currentPlayerId uuid.UUID
-	points          [3]int
 }
 
 func (g game) run() {
 	for x := range g.inboundEvents {
-		p := g.playerFromId(x.playerId())
-
 		switch e := x.(type) {
 		case playCardInboundEvent:
+			p := g.players[g.indexOfPlayerById(x.playerId())]
+
 			if len(g.players) < fullGameCount {
 				p.writeClientViolation("cannot play without a full game")
 				continue
@@ -54,15 +53,9 @@ func (g game) run() {
 
 			if len(g.inPlay) < fullGameCount {
 				// Simply rotate players.
-				var currentIndex int
-				for i, p := range g.players {
-					if p.id == g.currentPlayerId {
-						currentIndex = i
-						break
-					}
-				}
-				if currentIndex < fullGameCount-1 {
-					g.currentPlayerId = g.players[currentIndex+1].id
+				currentPlayerIndex := g.indexOfPlayerById(g.currentPlayerId)
+				if currentPlayerIndex < fullGameCount-1 {
+					g.currentPlayerId = g.players[currentPlayerIndex+1].id
 				} else {
 					g.currentPlayerId = g.players[0].id
 				}
@@ -83,16 +76,22 @@ func (g game) run() {
 				}
 
 				g.inPlay = nil
-				g.points[highestCardIndex] += pointsCount
-				g.currentPlayerId = g.players[highestCardIndex].id
+				winner := g.players[highestCardIndex]
+				winner.points += pointsCount
+
+				g.currentPlayerId = winner.id
+				points := make(map[uuid.UUID]int)
+				for _, p := range g.players {
+					points[p.id] = p.points
+				}
 				g.broadcastUpdate(map[string]any{
 					"currentPlayerId": g.currentPlayerId,
-					"points":          g.points,
+					"points":          points,
 				})
 			}
 		case connectPlayerInboundEvent:
 			if len(g.players) == fullGameCount {
-				p.writeCloseMessageError(errors.New("game is full"))
+				// p.writeCloseMessageError(errors.New("game is full"))
 				continue
 			}
 
@@ -116,7 +115,7 @@ func (g game) run() {
 				g.broadcastUpdate(map[string]any{"currentPlayerId": g.currentPlayerId})
 			}
 		default:
-			p.writeCloseMessageError(errors.New("inboundEvent handler not found"))
+			log.Println("unhandled event")
 		}
 	}
 }
@@ -131,14 +130,13 @@ func (g game) broadcastUpdate(msg map[string]any) {
 	}
 }
 
-func (g game) playerFromId(id uuid.UUID) *player {
-	var found *player
-	for _, p := range g.players {
+func (g game) indexOfPlayerById(id uuid.UUID) int {
+	for i, p := range g.players {
 		if p.id == id {
-			found = p
+			return i
 		}
 	}
-	return found
+	return -1
 }
 
 // indexOfValidPlayedCard finds the index of the played card

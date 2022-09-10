@@ -9,8 +9,9 @@ import (
 
 type player struct {
 	*websocket.Conn
-	id   uuid.UUID
-	hand []Card
+	id     uuid.UUID
+	hand   []Card
+	points int
 }
 
 func (p player) writeClientViolation(msg string) {
