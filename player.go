@@ -10,7 +10,7 @@ import (
 type player struct {
 	*websocket.Conn
 	id     uuid.UUID
-	hand   []Card
+	hand   []card
 	points int
 }
 

@@ -6,16 +6,16 @@ import (
 	"time"
 )
 
-func newShuffledDeck() []Card {
+func newShuffledDeck() []card {
 	rand.Seed(time.Now().UnixNano())
 
-	var cards []Card
+	var cards []card
 	for suit := SuitHearts; suit <= SuitSpades; suit++ {
 		for value := ValueTwo; value <= ValueAce; value++ {
 			if suit == SuitDiamonds && value == ValueTwo {
 				continue
 			}
-			cards = append(cards, Card{suit, value})
+			cards = append(cards, card{suit, value})
 		}
 	}
 
@@ -26,21 +26,21 @@ func newShuffledDeck() []Card {
 	return cards
 }
 
-type Card struct {
+type card struct {
 	Suit  `json:"suit"`
 	Value `json:"value"`
 }
 
-func (c Card) points() int {
+func (c card) worth() int {
 	if c.Suit == SuitHearts {
 		return 1
-	} else if reflect.DeepEqual(c, Card{SuitSpades, ValueQueen}) {
+	} else if reflect.DeepEqual(c, card{SuitSpades, ValueQueen}) {
 		return 13
 	}
 	return 0
 }
 
-func (c Card) beats(other Card) bool {
+func (c card) beats(other card) bool {
 	return c.Suit == other.Suit && c.Value > other.Value
 }
 

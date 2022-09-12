@@ -7,6 +7,7 @@ require (
 	github.com/gorilla/mux v1.8.0
 	github.com/gorilla/websocket v1.5.0
 	github.com/stretchr/testify v1.8.0
+	golang.org/x/exp v0.0.0-20220909182711-5c715a9e8561
 )
 
 require (

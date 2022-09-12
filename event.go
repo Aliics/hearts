@@ -33,7 +33,7 @@ func (c connectPlayerInboundEvent) playerId() uuid.UUID { return c.id }
 
 type playCardInboundEvent struct {
 	playedBy uuid.UUID
-	card     Card
+	card     card
 }
 
 func (p playCardInboundEvent) playerId() uuid.UUID { return p.playedBy }
@@ -61,7 +61,7 @@ func handleWebsocketMessages(p player, g game) {
 				continue
 			}
 
-			var card Card
+			var card card
 			logNonFatal(json.Unmarshal(cardJson, &card))
 
 			g.inboundEvents <- playCardInboundEvent{p.id, card}

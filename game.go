@@ -2,6 +2,7 @@ package main
 
 import (
 	"github.com/google/uuid"
+	"golang.org/x/exp/slices"
 	"log"
 	"reflect"
 )
@@ -14,10 +15,15 @@ var (
 	games = make(map[uuid.UUID]game)
 )
 
+type playerCard struct {
+	player
+	card
+}
+
 type game struct {
 	inboundEvents   chan inboundEvent
 	players         []*player
-	inPlay          []Card
+	inPlay          []playerCard
 	currentPlayerId uuid.UUID
 }
 
@@ -25,7 +31,7 @@ func (g game) run() {
 	for x := range g.inboundEvents {
 		switch e := x.(type) {
 		case playCardInboundEvent:
-			p := g.players[g.indexOfPlayerById(x.playerId())]
+			p := g.playerById(x.playerId())
 
 			if len(g.players) < fullGameCount {
 				p.writeClientViolation("cannot play without a full game")
@@ -44,11 +50,11 @@ func (g game) run() {
 			}
 
 			// Current cards in play for the round.
-			g.inPlay = append(g.inPlay, e.card)
+			g.inPlay = append(g.inPlay, playerCard{*p, e.card})
 			g.broadcastUpdate(map[string]any{"inPlay": g.inPlay})
 
 			// Player loses card played from their hand.
-			p.hand = append(p.hand[:cardIndex], p.hand[cardIndex+1:]...)
+			p.hand = slices.Delete(p.hand, cardIndex, cardIndex+1)
 			p.writeOutboundEvent(outboundEventGameUpdate, map[string]any{"hand": p.hand})
 
 			if len(g.inPlay) < fullGameCount {
@@ -61,25 +67,12 @@ func (g game) run() {
 				}
 				g.broadcastUpdate(map[string]any{"currentPlayerId": g.currentPlayerId})
 			} else {
-				// Tally points for the "winner".
-				var (
-					pointsCount      int
-					highestCardIndex int
-					highestCard      = g.inPlay[0]
-				)
-				for i, c := range g.inPlay {
-					pointsCount += c.points()
-					if c.beats(highestCard) {
-						highestCardIndex = i
-						highestCard = c
-					}
-				}
+				highestPlayerCard, addPoints := getHighestInPlay(g.inPlay)
 
-				g.inPlay = nil
-				winner := g.players[highestCardIndex]
-				winner.points += pointsCount
+				// Apply points to the winner and make them the next to play.
+				g.currentPlayerId = highestPlayerCard.id
+				g.playerById(g.currentPlayerId).points += addPoints
 
-				g.currentPlayerId = winner.id
 				points := make(map[uuid.UUID]int)
 				for _, p := range g.players {
 					points[p.id] = p.points
@@ -88,6 +81,8 @@ func (g game) run() {
 					"currentPlayerId": g.currentPlayerId,
 					"points":          points,
 				})
+
+				g.inPlay = nil // Reset the game for the next round.
 			}
 		case connectPlayerInboundEvent:
 			if len(g.players) == fullGameCount {
@@ -103,6 +98,7 @@ func (g game) run() {
 				"gameReady":   len(g.players) == fullGameCount,
 			})
 
+			// Deal some cards. :)
 			if len(g.players) == fullGameCount {
 				deck := newShuffledDeck()
 				handSize := len(deck) / fullGameCount
@@ -130,13 +126,25 @@ func (g game) broadcastUpdate(msg map[string]any) {
 	}
 }
 
+func (g game) playerById(id uuid.UUID) *player {
+	return g.players[g.indexOfPlayerById(id)]
+}
+
 func (g game) indexOfPlayerById(id uuid.UUID) int {
-	for i, p := range g.players {
-		if p.id == id {
-			return i
+	return slices.IndexFunc[*player](g.players, func(p *player) bool { return p.id == id })
+}
+
+// Tally points for the winner.
+func getHighestInPlay(inPlay []playerCard) (highest playerCard, points int) {
+	highest = inPlay[0]
+	for _, c := range inPlay {
+		points += c.worth()
+		if c.beats(highest.card) {
+			highest = c
 		}
 	}
-	return -1
+
+	return
 }
 
 // indexOfValidPlayedCard finds the index of the played card
@@ -146,7 +154,7 @@ func (g game) indexOfPlayerById(id uuid.UUID) int {
 //		   1. The played card must be in "inPlay"
 //	    or
 //		   2. The played card's suit must not be in "inPlay"
-func indexOfValidPlayedCard(inPlay []Card, hand []Card, played Card) int {
+func indexOfValidPlayedCard(inPlay []playerCard, hand []card, played card) int {
 	cardIndex := -1
 	inPlaySuitInHand := false
 	for i, c := range hand {
