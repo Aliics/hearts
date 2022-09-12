@@ -3,6 +3,7 @@ package main
 import (
 	"github.com/google/uuid"
 	"golang.org/x/exp/slices"
+	"hearts/data"
 	"log"
 	"reflect"
 )
@@ -17,7 +18,7 @@ var (
 
 type playerCard struct {
 	player
-	card
+	data.Card
 }
 
 type game struct {
@@ -45,7 +46,7 @@ func (g game) run() {
 
 			cardIndex := indexOfValidPlayedCard(g.inPlay, p.hand, e.card)
 			if cardIndex == -1 {
-				p.writeClientViolation("invalid card")
+				p.writeClientViolation("invalid Card")
 				continue
 			}
 
@@ -53,9 +54,9 @@ func (g game) run() {
 			g.inPlay = append(g.inPlay, playerCard{*p, e.card})
 			g.broadcastUpdate(map[string]any{"inPlay": g.inPlay})
 
-			// Player loses card played from their hand.
+			// Player loses Card played from their hand.
 			p.hand = slices.Delete(p.hand, cardIndex, cardIndex+1)
-			p.writeOutboundEvent(outboundEventGameUpdate, map[string]any{"hand": p.hand})
+			p.writeOutboundEvent(data.OutboundEventGameUpdate, map[string]any{"hand": p.hand})
 
 			if len(g.inPlay) < fullGameCount {
 				// Simply rotate players.
@@ -104,7 +105,7 @@ func (g game) run() {
 				handSize := len(deck) / fullGameCount
 				for i, p := range g.players {
 					p.hand = deck[handSize*i : handSize*(i+1)]
-					p.writeOutboundEvent(outboundEventGameUpdate, map[string]any{"hand": p.hand})
+					p.writeOutboundEvent(data.OutboundEventGameUpdate, map[string]any{"hand": p.hand})
 				}
 
 				g.currentPlayerId = g.players[0].id
@@ -122,7 +123,7 @@ func (g game) connectPlayer(p player) {
 
 func (g game) broadcastUpdate(msg map[string]any) {
 	for _, p := range g.players {
-		p.writeOutboundEvent(outboundEventGameUpdate, msg)
+		p.writeOutboundEvent(data.OutboundEventGameUpdate, msg)
 	}
 }
 
@@ -138,8 +139,8 @@ func (g game) indexOfPlayerById(id uuid.UUID) int {
 func getHighestInPlay(inPlay []playerCard) (highest playerCard, points int) {
 	highest = inPlay[0]
 	for _, c := range inPlay {
-		points += c.worth()
-		if c.beats(highest.card) {
+		points += c.Worth()
+		if c.Beats(highest.Card) {
 			highest = c
 		}
 	}
@@ -147,14 +148,14 @@ func getHighestInPlay(inPlay []playerCard) (highest playerCard, points int) {
 	return
 }
 
-// indexOfValidPlayedCard finds the index of the played card
+// indexOfValidPlayedCard finds the index of the played Card
 // with the following conditions:
 //
-//		The played card must be in "hand" and...
-//		   1. The played card must be in "inPlay"
+//		The played Card must be in "hand" and...
+//		   1. The played Card must be in "inPlay"
 //	    or
-//		   2. The played card's suit must not be in "inPlay"
-func indexOfValidPlayedCard(inPlay []playerCard, hand []card, played card) int {
+//		   2. The played Card's suit must not be in "inPlay"
+func indexOfValidPlayedCard(inPlay []playerCard, hand []data.Card, played data.Card) int {
 	cardIndex := -1
 	inPlaySuitInHand := false
 	for i, c := range hand {

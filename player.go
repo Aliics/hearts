@@ -4,24 +4,25 @@ import (
 	"encoding/json"
 	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
+	"hearts/data"
 	"time"
 )
 
 type player struct {
 	*websocket.Conn
 	id     uuid.UUID
-	hand   []card
+	hand   []data.Card
 	points int
 }
 
 func (p player) writeClientViolation(msg string) {
-	p.writeOutboundEvent(outboundEventClientViolation, map[string]any{"msg": msg})
+	p.writeOutboundEvent(data.OutboundEventClientViolation, map[string]any{"msg": msg})
 }
 
-func (p player) writeOutboundEvent(eventType outboundEventType, data map[string]any) {
-	we, err := json.Marshal(websocketMessage{
+func (p player) writeOutboundEvent(eventType data.OutboundEventType, eventData map[string]any) {
+	we, err := json.Marshal(data.WebsocketMessage{
 		Type: string(eventType),
-		Data: data,
+		Data: eventData,
 	})
 	logNonFatal(err)
 	logNonFatal(p.WriteMessage(websocket.TextMessage, we))

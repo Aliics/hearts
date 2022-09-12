@@ -3,24 +3,7 @@ package main
 import (
 	"encoding/json"
 	"github.com/google/uuid"
-)
-
-type websocketMessage struct {
-	Type string         `json:"type"`
-	Data map[string]any `json:"data"`
-}
-
-type inboundEventType string
-
-const (
-	inboundEventPlayCard inboundEventType = "playCard"
-)
-
-type outboundEventType string
-
-const (
-	outboundEventClientViolation outboundEventType = "clientViolation"
-	outboundEventGameUpdate      outboundEventType = "gameUpdate"
+	"hearts/data"
 )
 
 type inboundEvent interface {
@@ -33,25 +16,25 @@ func (c connectPlayerInboundEvent) playerId() uuid.UUID { return c.id }
 
 type playCardInboundEvent struct {
 	playedBy uuid.UUID
-	card     card
+	card     data.Card
 }
 
 func (p playCardInboundEvent) playerId() uuid.UUID { return p.playedBy }
 
 func handleWebsocketMessages(p player, g game) {
 	for {
-		var wm websocketMessage
+		var wm data.WebsocketMessage
 		err := p.ReadJSON(&wm)
 		if err != nil {
 			p.writeClientViolation(err.Error())
 			continue
 		}
 
-		switch inboundEventType(wm.Type) {
-		case inboundEventPlayCard:
+		switch data.InboundEventType(wm.Type) {
+		case data.InboundEventPlayCard:
 			cardMap, hasCard := wm.Data["card"]
 			if !hasCard {
-				p.writeClientViolation("card object is missing")
+				p.writeClientViolation("Card object is missing")
 				continue
 			}
 
@@ -61,7 +44,7 @@ func handleWebsocketMessages(p player, g game) {
 				continue
 			}
 
-			var card card
+			var card data.Card
 			logNonFatal(json.Unmarshal(cardJson, &card))
 
 			g.inboundEvents <- playCardInboundEvent{p.id, card}

@@ -1,21 +1,21 @@
 package main
 
 import (
+	"hearts/data"
 	"math/rand"
-	"reflect"
 	"time"
 )
 
-func newShuffledDeck() []card {
+func newShuffledDeck() []data.Card {
 	rand.Seed(time.Now().UnixNano())
 
-	var cards []card
-	for suit := SuitHearts; suit <= SuitSpades; suit++ {
-		for value := ValueTwo; value <= ValueAce; value++ {
-			if suit == SuitDiamonds && value == ValueTwo {
+	var cards []data.Card
+	for suit := data.SuitHearts; suit <= data.SuitSpades; suit++ {
+		for value := data.ValueTwo; value <= data.ValueAce; value++ {
+			if suit == data.SuitDiamonds && value == data.ValueTwo {
 				continue
 			}
-			cards = append(cards, card{suit, value})
+			cards = append(cards, data.Card{Suit: suit, Value: value})
 		}
 	}
 
@@ -25,48 +25,3 @@ func newShuffledDeck() []card {
 
 	return cards
 }
-
-type card struct {
-	Suit  `json:"suit"`
-	Value `json:"value"`
-}
-
-func (c card) worth() int {
-	if c.Suit == SuitHearts {
-		return 1
-	} else if reflect.DeepEqual(c, card{SuitSpades, ValueQueen}) {
-		return 13
-	}
-	return 0
-}
-
-func (c card) beats(other card) bool {
-	return c.Suit == other.Suit && c.Value > other.Value
-}
-
-type Suit uint8
-
-const (
-	SuitHearts Suit = iota
-	SuitDiamonds
-	SuitClubs
-	SuitSpades
-)
-
-type Value uint8
-
-const (
-	ValueTwo Value = iota
-	ValueThree
-	ValueFour
-	ValueFive
-	ValueSix
-	ValueSeven
-	ValueEight
-	ValueNine
-	ValueTen
-	ValueJack
-	ValueQueen
-	ValueKing
-	ValueAce
-)
