@@ -1,4 +1,4 @@
-package main
+package server
 
 import (
 	"fmt"
@@ -14,7 +14,7 @@ var (
 	wsUpgrader = websocket.Upgrader{WriteBufferSize: 1024, ReadBufferSize: 1024}
 )
 
-func main() {
+func Run() {
 	addr, hasAddr := os.LookupEnv("HEARTS_ADDR")
 	if !hasAddr {
 		addr = ":8080"
