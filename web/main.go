@@ -1,36 +1,38 @@
+//go:build wasm && js
+
 package web
 
 import (
 	"fmt"
 	. "github.com/aliics/hearts/web/dom"
+	"net/http"
 	"syscall/js"
 )
 
 func Run() {
 	keepAlive := make(chan any)
-	Body.AppendChildren(menuScreen())
+	DocumentBody.AppendChildren(menuScreen())
 
 	<-keepAlive // Gross hack to keep the script alive and block forever.
 }
 
 func menuScreen() Element {
-	gameIDInput := Input(TypeText, Placeholder("Game ID"))()
+	gameIDInput := Input(TypeText, PlaceholderAttribute("Game ID"))()
 
-	return Div(DisplayFlex, FlexDirectionColumn, Margin("auto"), Width("fit-content"))(
+	return Div(DisplayFlex, FlexDirectionColumn, MarginAttribute("auto"), WidthAttribute("fit-content"))(
 		Div(DisplayFlex)(
 			gameIDInput,
-			Input(TypeButton, Value("Join Game"))().
-				AddEventListener(EventTypeClick, func(_ Element) {
+			Input(TypeButton, ValueAttribute("Join Game"))().
+				AddEventListener(EventTypeClick, func(js.Value, []js.Value) {
 					beginGame(gameIDInput.Get("value").String())
 				}),
 		),
 
 		P()(StringLiteral("or")),
 
-		Input(TypeButton, Value("Create Game"))().
-			AddEventListener(EventTypeClick, func(_ Element) {
-				req := js.Global().Get("XMLHttpRequest").New()
-				req.Call("open", "POST", "http://localhost:8080/game/")
+		Input(TypeButton, ValueAttribute("Create Game"))().
+			AddEventListener(EventTypeClick, func(js.Value, []js.Value) {
+				req := NewXHR(http.MethodPost, "http://localhost:8080/game/")
 				req.Call("send")
 				req.Set("onload", func() {})
 			}),
@@ -38,10 +40,13 @@ func menuScreen() Element {
 }
 
 func beginGame(gameID string) {
-	Element{Value: js.Global().
-		Get("WebSocket").
-		New(fmt.Sprintf("ws://localhost:8080/game/%s/", gameID))}.
-		AddEventListener(EventTypeOpen, func(_ Element) {
+	NewWebSocket(fmt.Sprintf("ws://localhost:8080/game/%s/", gameID)).
+		AddEventListener(EventTypeOpen, func(js.Value, []js.Value) {
 			fmt.Println("Websocket connected!")
+		}).
+		AddEventListener(EventTypeMessage, func(_ js.Value, messages []js.Value) {
+			for _, message := range messages {
+				fmt.Println(message.Get("data"))
+			}
 		})
 }

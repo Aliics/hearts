@@ -67,7 +67,7 @@ func playGame(w http.ResponseWriter, r *http.Request) {
 	}
 	defer func() { logNonFatal(conn.Close()) }()
 
-	p := player{Conn: conn, id: uuid.New()}
+	p := newPlayer(conn, uuid.New())
 	g.connectPlayer(p)
 
 	handleWebsocketMessages(p, g)

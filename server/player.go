@@ -10,9 +10,19 @@ import (
 
 type player struct {
 	*websocket.Conn
-	id     uuid.UUID
-	hand   []data.Card
-	points int
+	isClosed bool
+	id       uuid.UUID
+	hand     []data.Card
+	points   int
+}
+
+func newPlayer(conn *websocket.Conn, id uuid.UUID) *player {
+	p := &player{Conn: conn, id: id}
+	conn.SetCloseHandler(func(_ int, _ string) error {
+		p.isClosed = true
+		return nil
+	})
+	return p
 }
 
 func (p player) writeClientViolation(msg string) {

@@ -1,137 +1,166 @@
 package dom
 
+import (
+	"strings"
+)
+
 type ElementAttributes interface {
 	Apply(*Element)
 }
 
-type HREF string
+type Attribute struct {
+	Key, Value string
+}
 
-func (h HREF) Apply(e *Element) {
+func (a Attribute) Apply(e *Element) {
+	if strings.Contains(a.Key, ".") {
+		var (
+			elm  = e
+			keys = strings.Split(a.Key, ".")
+		)
+		for i := 0; i < len(keys)-1; i++ {
+			elm = &Element{elm.Get(keys[i])}
+		}
+		elm.Set(keys[len(keys)-1], a.Value)
+	} else {
+		e.Set(a.Key, a.Value)
+	}
+}
+
+type HREFAttribute string
+
+func (h HREFAttribute) Apply(e *Element) {
 	e.Set("href", string(h))
 }
 
-type Placeholder string
+type PlaceholderAttribute string
 
-func (p Placeholder) Apply(e *Element) {
-	e.Set("placeholder", string(p))
+func (p PlaceholderAttribute) Apply(e *Element) {
+	Attribute{"placeholder", string(p)}.Apply(e)
 }
 
-type Style string
+type StyleAttribute string
 
-func (s Style) Apply(e *Element) {
-	e.Set("style", string(s))
+func (s StyleAttribute) Apply(e *Element) {
+	Attribute{"style", string(s)}.Apply(e)
 }
 
-type Class string
+type ClassAttribute string
 
-func (c Class) Apply(e *Element) {
-	e.Set("style", string(c))
+func (c ClassAttribute) Apply(e *Element) {
+	Attribute{"class", string(c)}.Apply(e)
 }
 
-type Margin string
+type MarginAttribute string
 
-func (m Margin) Apply(e *Element) {
-	e.Get("style").Set("margin", string(m))
+func (m MarginAttribute) Apply(e *Element) {
+	Attribute{"style.margin", string(m)}.Apply(e)
 }
 
-type Padding string
+type PaddingAttribute string
 
-func (p Padding) Apply(e *Element) {
-	e.Get("style").Set("padding", string(p))
+func (p PaddingAttribute) Apply(e *Element) {
+	Attribute{"style.padding", string(p)}.Apply(e)
 }
 
-type Width string
+type WidthAttribute string
 
-func (w Width) Apply(e *Element) {
-	e.Get("style").Set("width", string(w))
+func (w WidthAttribute) Apply(e *Element) {
+	Attribute{"style.width", string(w)}.Apply(e)
 }
 
-type Height string
+type HeightAttribute string
 
-func (h Height) Apply(e *Element) {
-	e.Get("style").Set("height", string(h))
+func (h HeightAttribute) Apply(e *Element) {
+	Attribute{"style.height", string(h)}.Apply(e)
 }
 
-type Type string
+type TitleAttribute string
+
+func (t TitleAttribute) Apply(e *Element) {
+	Attribute{"title", string(t)}.Apply(e)
+}
+
+type TypeAttribute string
 
 const (
-	TypeButton   Type = "button"
-	TypeCheckbox Type = "checkbox"
-	TypeColor    Type = "color"
-	TypeDate     Type = "date"
-	TypeDatetime Type = "datetime-local"
-	TypeEmail    Type = "email"
-	TypeFile     Type = "file"
-	TypeHidden   Type = "hidden"
-	TypeImage    Type = "image"
-	TypeMonth    Type = "month"
-	TypeNumber   Type = "number"
-	TypePassword Type = "password"
-	TypeRadio    Type = "radio"
-	TypeRange    Type = "range"
-	TypeReset    Type = "reset"
-	TypeSearch   Type = "search"
-	TypeSubmit   Type = "submit"
-	TypeTel      Type = "tel"
-	TypeText     Type = "text"
-	TypeTime     Type = "time"
-	TypeURL      Type = "url"
-	TypeWeek     Type = "week"
+	TypeButton   TypeAttribute = "button"
+	TypeCheckbox TypeAttribute = "checkbox"
+	TypeColor    TypeAttribute = "color"
+	TypeDate     TypeAttribute = "date"
+	TypeDatetime TypeAttribute = "datetime-local"
+	TypeEmail    TypeAttribute = "email"
+	TypeFile     TypeAttribute = "file"
+	TypeHidden   TypeAttribute = "hidden"
+	TypeImage    TypeAttribute = "image"
+	TypeMonth    TypeAttribute = "month"
+	TypeNumber   TypeAttribute = "number"
+	TypePassword TypeAttribute = "password"
+	TypeRadio    TypeAttribute = "radio"
+	TypeRange    TypeAttribute = "range"
+	TypeReset    TypeAttribute = "reset"
+	TypeSearch   TypeAttribute = "search"
+	TypeSubmit   TypeAttribute = "submit"
+	TypeTel      TypeAttribute = "tel"
+	TypeText     TypeAttribute = "text"
+	TypeTime     TypeAttribute = "time"
+	TypeURL      TypeAttribute = "url"
+	TypeWeek     TypeAttribute = "week"
 )
 
-func (t Type) Apply(e *Element) {
-	e.Set("type", string(t))
+func (t TypeAttribute) Apply(e *Element) {
+	Attribute{"type", string(t)}.Apply(e)
 }
 
-type Value string
+type ValueAttribute string
 
-func (v Value) Apply(e *Element) {
-	e.Set("value", string(v))
+func (v ValueAttribute) Apply(e *Element) {
+	Attribute{"value", string(v)}.Apply(e)
 }
 
-type Display string
+type DisplayAttribute string
 
 const (
-	DisplayBlock            Display = "block"
-	DisplayCompact          Display = "compact"
-	DisplayFlex             Display = "flex"
-	DisplayGrid             Display = "grid"
-	DisplayInline           Display = "inline"
-	DisplayInlineBlock      Display = "inline-block"
-	DisplayInlineFlex       Display = "inline-flex"
-	DisplayInlineTable      Display = "inline-table"
-	DisplayListItem         Display = "list-item"
-	DisplayMarker           Display = "marker"
-	DisplayNone             Display = "none"
-	DisplayRunIn            Display = "run-in"
-	DisplayTable            Display = "table"
-	DisplayTableCaption     Display = "table-caption"
-	DisplayTableCell        Display = "table-cell"
-	DisplayTableColumn      Display = "table-column"
-	DisplayTableColumnGroup Display = "table-column-group"
-	DisplayTableFooterGroup Display = "table-footer-group"
-	DisplayTableHeaderGroup Display = "table-header-group"
-	DisplayTableRow         Display = "table-row"
-	DisplayTableRowGroup    Display = "table-row-group"
-	DisplayInitial          Display = "initial"
-	DisplayInherit          Display = "inherit"
+	DisplayBlock            DisplayAttribute = "block"
+	DisplayCompact          DisplayAttribute = "compact"
+	DisplayFlex             DisplayAttribute = "flex"
+	DisplayGrid             DisplayAttribute = "grid"
+	DisplayInline           DisplayAttribute = "inline"
+	DisplayInlineBlock      DisplayAttribute = "inline-block"
+	DisplayInlineFlex       DisplayAttribute = "inline-flex"
+	DisplayInlineTable      DisplayAttribute = "inline-table"
+	DisplayListItem         DisplayAttribute = "list-item"
+	DisplayMarker           DisplayAttribute = "marker"
+	DisplayNone             DisplayAttribute = "none"
+	DisplayRunIn            DisplayAttribute = "run-in"
+	DisplayTable            DisplayAttribute = "table"
+	DisplayTableCaption     DisplayAttribute = "table-caption"
+	DisplayTableCell        DisplayAttribute = "table-cell"
+	DisplayTableColumn      DisplayAttribute = "table-column"
+	DisplayTableColumnGroup DisplayAttribute = "table-column-group"
+	DisplayTableFooterGroup DisplayAttribute = "table-footer-group"
+	DisplayTableHeaderGroup DisplayAttribute = "table-header-group"
+	DisplayTableRow         DisplayAttribute = "table-row"
+	DisplayTableRowGroup    DisplayAttribute = "table-row-group"
+	DisplayInitial          DisplayAttribute = "initial"
+	DisplayInherit          DisplayAttribute = "inherit"
 )
 
-func (d Display) Apply(e *Element) {
-	e.Get("style").Set("display", string(d))
+func (d DisplayAttribute) Apply(e *Element) {
+	Attribute{"style.display", string(d)}.Apply(e)
 }
 
-type FlexDirection string
+type FlexDirectionAttribute string
 
 const (
-	FlexDirectionRow           FlexDirection = "row"
-	FlexDirectionRowReverse    FlexDirection = "row-reverse"
-	FlexDirectionColumn        FlexDirection = "column"
-	FlexDirectionColumnReverse FlexDirection = "column-reverse"
-	FlexDirectionInitial       FlexDirection = "initial"
-	FlexDirectionInherit       FlexDirection = "inherit"
+	FlexDirectionRow           FlexDirectionAttribute = "row"
+	FlexDirectionRowReverse    FlexDirectionAttribute = "row-reverse"
+	FlexDirectionColumn        FlexDirectionAttribute = "column"
+	FlexDirectionColumnReverse FlexDirectionAttribute = "column-reverse"
+	FlexDirectionInitial       FlexDirectionAttribute = "initial"
+	FlexDirectionInherit       FlexDirectionAttribute = "inherit"
 )
 
-func (f FlexDirection) Apply(e *Element) {
-	e.Get("style").Set("flex-direction", string(f))
+func (f FlexDirectionAttribute) Apply(e *Element) {
+	Attribute{"style.flex-direction", string(f)}.Apply(e)
 }

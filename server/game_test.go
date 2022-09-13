@@ -72,7 +72,7 @@ func Test_indexOfValidPlayedCard(t *testing.T) {
 			0,
 		},
 		{
-			"playerId does not have Card",
+			"playerID does not have Card",
 			args{
 				nil,
 				[]data.Card{{Suit: data.SuitDiamonds, Value: data.ValueKing}},

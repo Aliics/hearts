@@ -24,9 +24,9 @@ func (e Element) AppendChildren(children ...Element) Element {
 	return e
 }
 
-func (e Element) AddEventListener(eventType EventType, f func(Element)) Element {
-	eventListenerFunc := js.FuncOf(func(value js.Value, _ []js.Value) any {
-		f(e)
+func (e Element) AddEventListener(eventType EventType, f func(js.Value, []js.Value)) Element {
+	eventListenerFunc := js.FuncOf(func(value js.Value, args []js.Value) any {
+		f(value, args)
 		return js.Undefined()
 	})
 	e.Call("addEventListener", string(eventType), eventListenerFunc)

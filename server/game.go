@@ -25,21 +25,21 @@ type game struct {
 	inboundEvents   chan inboundEvent
 	players         []*player
 	inPlay          []playerCard
-	currentPlayerId uuid.UUID
+	currentPlayerID uuid.UUID
 }
 
 func (g game) run() {
 	for x := range g.inboundEvents {
 		switch e := x.(type) {
 		case playCardInboundEvent:
-			p := g.playerById(x.playerId())
+			p := g.playerByID(x.playerID())
 
 			if len(g.players) < fullGameCount {
 				p.writeClientViolation("cannot play without a full game")
 				continue
 			}
 
-			if e.playerId() != g.currentPlayerId {
+			if e.playerID() != g.currentPlayerID {
 				p.writeClientViolation("cannot play out of turn")
 				continue
 			}
@@ -60,26 +60,26 @@ func (g game) run() {
 
 			if len(g.inPlay) < fullGameCount {
 				// Simply rotate players.
-				currentPlayerIndex := g.indexOfPlayerById(g.currentPlayerId)
+				currentPlayerIndex := g.indexOfPlayerById(g.currentPlayerID)
 				if currentPlayerIndex < fullGameCount-1 {
-					g.currentPlayerId = g.players[currentPlayerIndex+1].id
+					g.currentPlayerID = g.players[currentPlayerIndex+1].id
 				} else {
-					g.currentPlayerId = g.players[0].id
+					g.currentPlayerID = g.players[0].id
 				}
-				g.broadcastUpdate(map[string]any{"currentPlayerId": g.currentPlayerId})
+				g.broadcastUpdate(map[string]any{"currentPlayerID": g.currentPlayerID})
 			} else {
 				highestPlayerCard, addPoints := getHighestInPlay(g.inPlay)
 
 				// Apply points to the winner and make them the next to play.
-				g.currentPlayerId = highestPlayerCard.id
-				g.playerById(g.currentPlayerId).points += addPoints
+				g.currentPlayerID = highestPlayerCard.id
+				g.playerByID(g.currentPlayerID).points += addPoints
 
 				points := make(map[uuid.UUID]int)
 				for _, p := range g.players {
 					points[p.id] = p.points
 				}
 				g.broadcastUpdate(map[string]any{
-					"currentPlayerId": g.currentPlayerId,
+					"currentPlayerID": g.currentPlayerID,
 					"points":          points,
 				})
 
@@ -108,17 +108,28 @@ func (g game) run() {
 					p.writeOutboundEvent(data.OutboundEventGameUpdate, map[string]any{"hand": p.hand})
 				}
 
-				g.currentPlayerId = g.players[0].id
-				g.broadcastUpdate(map[string]any{"currentPlayerId": g.currentPlayerId})
+				g.currentPlayerID = g.players[0].id
+				g.broadcastUpdate(map[string]any{"currentPlayerID": g.currentPlayerID})
 			}
+		case disconnectPlayerInboundEvent:
+			playerIndex := g.indexOfPlayerById(e.playerID())
+			g.players = slices.Delete(g.players, playerIndex, playerIndex+1)
+			g.broadcastUpdate(map[string]any{
+				"playerCount": len(g.players),
+				"gameReady":   len(g.players) == fullGameCount,
+			})
 		default:
 			log.Println("unhandled event")
 		}
 	}
 }
 
-func (g game) connectPlayer(p player) {
-	g.inboundEvents <- connectPlayerInboundEvent(p)
+func (g game) connectPlayer(p *player) {
+	g.inboundEvents <- connectPlayerInboundEvent(*p)
+}
+
+func (g game) disconnectPlayer(p *player) {
+	g.inboundEvents <- disconnectPlayerInboundEvent(*p)
 }
 
 func (g game) broadcastUpdate(msg map[string]any) {
@@ -127,7 +138,7 @@ func (g game) broadcastUpdate(msg map[string]any) {
 	}
 }
 
-func (g game) playerById(id uuid.UUID) *player {
+func (g game) playerByID(id uuid.UUID) *player {
 	return g.players[g.indexOfPlayerById(id)]
 }
 
