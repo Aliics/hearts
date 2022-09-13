@@ -1,6 +1,6 @@
 package main
 
-import "hearts/server"
+import "github.com/aliics/hearts/server"
 
 func main() {
 	server.Run()

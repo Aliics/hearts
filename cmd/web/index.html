@@ -1,0 +1,31 @@
+<!doctype html>
+<!--
+Copyright 2018 The Go Authors. All rights reserved.
+Use of this source code is governed by a BSD-style
+license that can be found in the LICENSE file.
+-->
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <title>hearts</title>
+</head>
+
+<body>
+<script src="wasm_exec.js"></script>
+
+<script>
+    if (!WebAssembly.instantiateStreaming) { // polyfill
+        WebAssembly.instantiateStreaming = async (resp, importObject) => {
+            const source = await (await resp).arrayBuffer();
+            return await WebAssembly.instantiate(source, importObject);
+        };
+    }
+
+    const go = new Go();
+    WebAssembly.instantiateStreaming(fetch("main.wasm"), go.importObject)
+        .then(res => go.run(res.instance))
+        .catch(e => console.error(e))
+</script>
+</body>
+</html>

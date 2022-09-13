@@ -1,8 +1,8 @@
 package server
 
 import (
+	"github.com/aliics/hearts/data"
 	"github.com/stretchr/testify/assert"
-	"hearts/data"
 	"testing"
 )
 

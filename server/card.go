@@ -1,7 +1,7 @@
 package server
 
 import (
-	"hearts/data"
+	"github.com/aliics/hearts/data"
 	"math/rand"
 	"time"
 )

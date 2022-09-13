@@ -1,9 +1,9 @@
 package server
 
 import (
+	"github.com/aliics/hearts/data"
 	"github.com/google/uuid"
 	"golang.org/x/exp/slices"
-	"hearts/data"
 	"log"
 	"reflect"
 )

@@ -2,8 +2,8 @@ package server
 
 import (
 	"encoding/json"
+	"github.com/aliics/hearts/data"
 	"github.com/google/uuid"
-	"hearts/data"
 )
 
 type inboundEvent interface {

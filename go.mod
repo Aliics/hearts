@@ -1,4 +1,4 @@
-module hearts
+module github.com/aliics/hearts
 
 go 1.19
 

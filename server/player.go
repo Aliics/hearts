@@ -2,9 +2,9 @@ package server
 
 import (
 	"encoding/json"
+	"github.com/aliics/hearts/data"
 	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
-	"hearts/data"
 	"time"
 )
 
