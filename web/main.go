@@ -2,26 +2,46 @@ package web
 
 import (
 	"fmt"
-	. "github.com/aliics/hearts/dom"
+	. "github.com/aliics/hearts/web/dom"
+	"syscall/js"
 )
 
 func Run() {
 	keepAlive := make(chan any)
-	Body.AppendChildren(
-		Div(Style("text-align: center"))(
-			Div(DisplayFlex)(
-				Input(TypeText)().
-					AddEventListener(EventTypeInput, func(element Element) {
-						fmt.Printf("Input is %s\n", element.Get("value").String())
-					}),
-				Input(TypeButton, Value("Join game"))().
-					AddEventListener(EventTypeClick, func(element Element) {
-						fmt.Printf("Clicked %s\n", element.Get("value").String())
-					}),
-			),
-			Input(TypeButton, Value("Create game"))(),
-		),
-	)
+	Body.AppendChildren(menuScreen())
 
 	<-keepAlive // Gross hack to keep the script alive and block forever.
+}
+
+func menuScreen() Element {
+	gameIDInput := Input(TypeText, Placeholder("Game ID"))()
+
+	return Div(DisplayFlex, FlexDirectionColumn, Margin("auto"), Width("fit-content"))(
+		Div(DisplayFlex)(
+			gameIDInput,
+			Input(TypeButton, Value("Join Game"))().
+				AddEventListener(EventTypeClick, func(_ Element) {
+					beginGame(gameIDInput.Get("value").String())
+				}),
+		),
+
+		P()(StringLiteral("or")),
+
+		Input(TypeButton, Value("Create Game"))().
+			AddEventListener(EventTypeClick, func(_ Element) {
+				req := js.Global().Get("XMLHttpRequest").New()
+				req.Call("open", "POST", "http://localhost:8080/game/")
+				req.Call("send")
+				req.Set("onload", func() {})
+			}),
+	)
+}
+
+func beginGame(gameID string) {
+	Element{Value: js.Global().
+		Get("WebSocket").
+		New(fmt.Sprintf("ws://localhost:8080/game/%s/", gameID))}.
+		AddEventListener(EventTypeOpen, func(_ Element) {
+			fmt.Println("Websocket connected!")
+		})
 }

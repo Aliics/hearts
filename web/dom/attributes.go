@@ -10,6 +10,12 @@ func (h HREF) Apply(e *Element) {
 	e.Set("href", string(h))
 }
 
+type Placeholder string
+
+func (p Placeholder) Apply(e *Element) {
+	e.Set("placeholder", string(p))
+}
+
 type Style string
 
 func (s Style) Apply(e *Element) {
@@ -20,6 +26,30 @@ type Class string
 
 func (c Class) Apply(e *Element) {
 	e.Set("style", string(c))
+}
+
+type Margin string
+
+func (m Margin) Apply(e *Element) {
+	e.Get("style").Set("margin", string(m))
+}
+
+type Padding string
+
+func (p Padding) Apply(e *Element) {
+	e.Get("style").Set("padding", string(p))
+}
+
+type Width string
+
+func (w Width) Apply(e *Element) {
+	e.Get("style").Set("width", string(w))
+}
+
+type Height string
+
+func (h Height) Apply(e *Element) {
+	e.Get("style").Set("height", string(h))
 }
 
 type Type string
@@ -65,6 +95,7 @@ const (
 	DisplayBlock            Display = "block"
 	DisplayCompact          Display = "compact"
 	DisplayFlex             Display = "flex"
+	DisplayGrid             Display = "grid"
 	DisplayInline           Display = "inline"
 	DisplayInlineBlock      Display = "inline-block"
 	DisplayInlineFlex       Display = "inline-flex"
@@ -87,5 +118,20 @@ const (
 )
 
 func (d Display) Apply(e *Element) {
-	e.Set("display", string(d))
+	e.Get("style").Set("display", string(d))
+}
+
+type FlexDirection string
+
+const (
+	FlexDirectionRow           FlexDirection = "row"
+	FlexDirectionRowReverse    FlexDirection = "row-reverse"
+	FlexDirectionColumn        FlexDirection = "column"
+	FlexDirectionColumnReverse FlexDirection = "column-reverse"
+	FlexDirectionInitial       FlexDirection = "initial"
+	FlexDirectionInherit       FlexDirection = "inherit"
+)
+
+func (f FlexDirection) Apply(e *Element) {
+	e.Get("style").Set("flex-direction", string(f))
 }

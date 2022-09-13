@@ -72,7 +72,13 @@ func attributeElement(elementType ElementType, attributes []ElementAttributes) f
 		for _, attribute := range attributes {
 			attribute.Apply(&e)
 		}
-		e.AppendChildren(inner...)
+		for _, element := range inner {
+			if element.Type() == js.TypeString {
+				e.Set("innerHTML", e.Get("innerHTML").String()+element.String())
+			} else {
+				e.AppendChild(element)
+			}
+		}
 		return e
 	}
 }
