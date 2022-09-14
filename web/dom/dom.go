@@ -13,6 +13,7 @@ func NewWebSocket(url string) Element {
 
 func NewXHR(method, url string) Element {
 	req := Element{js.Global().Get("XMLHttpRequest").New()}
+	req.Set("responseType", "text")
 	req.Call("open", method, url)
 	return req
 }

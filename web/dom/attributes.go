@@ -27,6 +27,12 @@ func (a Attribute) Apply(e *Element) {
 	}
 }
 
+type DisabledAttribute bool
+
+func (d DisabledAttribute) Apply(e *Element) {
+	e.Set("disabled", bool(d))
+}
+
 type HREFAttribute string
 
 func (h HREFAttribute) Apply(e *Element) {

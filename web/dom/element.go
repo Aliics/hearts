@@ -12,6 +12,18 @@ func CreateElement(elementType ElementType) Element {
 	return Element{Document.Call("createElement", string(elementType))}
 }
 
+func (e Element) RemoveChild(child Element) Element {
+	e.Call("removeChild", child.Value)
+	return e
+}
+
+func (e Element) RemoveChildren(children ...Element) Element {
+	for _, child := range children {
+		e.RemoveChild(child)
+	}
+	return e
+}
+
 func (e Element) AppendChild(child Element) Element {
 	e.Call("appendChild", child.Value)
 	return e

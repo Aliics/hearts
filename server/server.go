@@ -3,6 +3,7 @@ package server
 import (
 	"fmt"
 	"github.com/google/uuid"
+	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 	"github.com/gorilla/websocket"
 	"log"
@@ -30,7 +31,7 @@ func Run() {
 	router.Methods(http.MethodPost).Subrouter().HandleFunc("/game/", createGame)
 	router.Methods(http.MethodGet).Subrouter().HandleFunc("/game/{id}/", playGame)
 
-	err := http.ListenAndServe(addr, router)
+	err := http.ListenAndServe(addr, handlers.CORS(handlers.AllowedOrigins([]string{"*"}))(router))
 	if err != nil {
 		log.Fatalln(err)
 	}
