@@ -1,8 +1,8 @@
-package server
+package util
 
 import "log"
 
-func logNonFatal(err error) {
+func LogNonFatal(err error) {
 	if err != nil {
 		log.Println(err)
 	}

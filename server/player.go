@@ -3,6 +3,7 @@ package server
 import (
 	"encoding/json"
 	"github.com/aliics/hearts/data"
+	"github.com/aliics/hearts/util"
 	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
 	"time"
@@ -25,21 +26,21 @@ func newPlayer(conn *websocket.Conn, id uuid.UUID) *player {
 	return p
 }
 
-func (p player) writeClientViolation(msg string) {
-	p.writeOutboundEvent(data.OutboundEventClientViolation, map[string]any{"msg": msg})
-}
-
-func (p player) writeOutboundEvent(eventType data.OutboundEventType, eventData map[string]any) {
-	we, err := json.Marshal(data.WebsocketMessage{
-		Type: string(eventType),
-		Data: eventData,
+func (p player) writeClientViolation(message string) {
+	p.writeOutboundPayload(data.OutboundPayload{
+		Type: data.OutboundClientViolation,
+		Data: data.ClientViolationEvent{Message: message},
 	})
-	logNonFatal(err)
-	logNonFatal(p.WriteMessage(websocket.TextMessage, we))
 }
 
-func (p player) writeCloseMessageError(err error) {
-	logNonFatal(p.WriteControl(
+func (p player) writeOutboundPayload(payload data.OutboundPayload) {
+	we, err := json.Marshal(payload)
+	util.LogNonFatal(err)
+	util.LogNonFatal(p.WriteMessage(websocket.TextMessage, we))
+}
+
+func (p player) WriteCloseMessageError(err error) {
+	util.LogNonFatal(p.WriteControl(
 		websocket.CloseMessage,
 		websocket.FormatCloseMessage(websocket.CloseInternalServerErr, err.Error()),
 		time.Now().Add(time.Second),

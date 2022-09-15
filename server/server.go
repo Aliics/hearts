@@ -2,6 +2,7 @@ package server
 
 import (
 	"fmt"
+	"github.com/aliics/hearts/util"
 	"github.com/google/uuid"
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
@@ -39,13 +40,13 @@ func Run() {
 
 func createGame(w http.ResponseWriter, _ *http.Request) {
 	id := uuid.New()
-	g := game{inboundEvents: make(chan inboundEvent, 1)}
+	g := &game{inboundEvents: make(chan gameEvent)}
 	games[id] = g
 
 	go g.run()
 
 	_, err := fmt.Fprintln(w, id.String())
-	logNonFatal(err)
+	util.LogNonFatal(err)
 }
 
 func playGame(w http.ResponseWriter, r *http.Request) {
@@ -53,7 +54,7 @@ func playGame(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		_, err := fmt.Fprintln(w, err)
-		logNonFatal(err)
+		util.LogNonFatal(err)
 		return
 	}
 	g, gameFound := games[id]
@@ -66,7 +67,7 @@ func playGame(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		return
 	}
-	defer func() { logNonFatal(conn.Close()) }()
+	defer func() { util.LogNonFatal(conn.Close()) }()
 
 	p := newPlayer(conn, uuid.New())
 	g.connectPlayer(p)

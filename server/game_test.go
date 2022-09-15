@@ -8,7 +8,7 @@ import (
 
 func Test_indexOfValidPlayedCard(t *testing.T) {
 	type args struct {
-		inPlay []playerCard
+		inPlay []data.PlayerCard
 		hand   []data.Card
 		played data.Card
 	}
@@ -29,7 +29,7 @@ func Test_indexOfValidPlayedCard(t *testing.T) {
 		{
 			"last Card and different suit played",
 			args{
-				[]playerCard{{Card: data.Card{Suit: data.SuitClubs, Value: data.ValueKing}}},
+				[]data.PlayerCard{{Card: data.Card{Suit: data.SuitClubs, Value: data.ValueKing}}},
 				[]data.Card{{Suit: data.SuitDiamonds, Value: data.ValueAce}},
 				data.Card{Suit: data.SuitDiamonds, Value: data.ValueAce},
 			},
@@ -47,7 +47,7 @@ func Test_indexOfValidPlayedCard(t *testing.T) {
 		{
 			"many cards of suit and cards played",
 			args{
-				[]playerCard{{Card: data.Card{Suit: data.SuitDiamonds, Value: data.ValueEight}}},
+				[]data.PlayerCard{{Card: data.Card{Suit: data.SuitDiamonds, Value: data.ValueEight}}},
 				[]data.Card{{Suit: data.SuitDiamonds, Value: data.ValueKing}, {Suit: data.SuitDiamonds, Value: data.ValueAce}},
 				data.Card{Suit: data.SuitDiamonds, Value: data.ValueAce},
 			},
@@ -56,7 +56,7 @@ func Test_indexOfValidPlayedCard(t *testing.T) {
 		{
 			"not matching suits but suit is in hand",
 			args{
-				[]playerCard{{Card: data.Card{Suit: data.SuitSpades, Value: data.ValueAce}}},
+				[]data.PlayerCard{{Card: data.Card{Suit: data.SuitSpades, Value: data.ValueAce}}},
 				[]data.Card{{Suit: data.SuitDiamonds, Value: data.ValueKing}, {Suit: data.SuitSpades, Value: data.ValueSeven}},
 				data.Card{Suit: data.SuitDiamonds, Value: data.ValueKing},
 			},
@@ -65,7 +65,7 @@ func Test_indexOfValidPlayedCard(t *testing.T) {
 		{
 			"not matching suits but no suit in hand",
 			args{
-				[]playerCard{{Card: data.Card{Suit: data.SuitSpades, Value: data.ValueAce}}},
+				[]data.PlayerCard{{Card: data.Card{Suit: data.SuitSpades, Value: data.ValueAce}}},
 				[]data.Card{{Suit: data.SuitDiamonds, Value: data.ValueKing}},
 				data.Card{Suit: data.SuitDiamonds, Value: data.ValueKing},
 			},
@@ -90,84 +90,84 @@ func Test_indexOfValidPlayedCard(t *testing.T) {
 
 func Test_getHighestInPlay(t *testing.T) {
 	type args struct {
-		inPlay []playerCard
+		inPlay []data.PlayerCard
 	}
 	tests := []struct {
 		name        string
 		args        args
-		wantHighest playerCard
+		wantHighest data.PlayerCard
 		wantPoints  int
 	}{
 		{
 			"all same suit, no points cards",
 			args{
-				[]playerCard{
+				[]data.PlayerCard{
 					{Card: data.Card{Suit: data.SuitSpades, Value: data.ValueThree}},
 					{Card: data.Card{Suit: data.SuitSpades, Value: data.ValueFour}},
 					{Card: data.Card{Suit: data.SuitSpades, Value: data.ValueFive}},
 				},
 			},
-			playerCard{Card: data.Card{Suit: data.SuitSpades, Value: data.ValueFive}},
+			data.PlayerCard{Card: data.Card{Suit: data.SuitSpades, Value: data.ValueFive}},
 			0,
 		},
 		{
 			"all same suit, some hearts",
 			args{
-				[]playerCard{
+				[]data.PlayerCard{
 					{Card: data.Card{Suit: data.SuitSpades, Value: data.ValueThree}},
 					{Card: data.Card{Suit: data.SuitHearts, Value: data.ValueQueen}},
 					{Card: data.Card{Suit: data.SuitSpades, Value: data.ValueFive}},
 				},
 			},
-			playerCard{Card: data.Card{Suit: data.SuitSpades, Value: data.ValueFive}},
+			data.PlayerCard{Card: data.Card{Suit: data.SuitSpades, Value: data.ValueFive}},
 			1,
 		},
 		{
 			"hearts round",
 			args{
-				[]playerCard{
+				[]data.PlayerCard{
 					{Card: data.Card{Suit: data.SuitHearts, Value: data.ValueThree}},
 					{Card: data.Card{Suit: data.SuitHearts, Value: data.ValueQueen}},
 					{Card: data.Card{Suit: data.SuitHearts, Value: data.ValueFive}},
 				},
 			},
-			playerCard{Card: data.Card{Suit: data.SuitHearts, Value: data.ValueQueen}},
+			data.PlayerCard{Card: data.Card{Suit: data.SuitHearts, Value: data.ValueQueen}},
 			3,
 		},
 		{
 			"queen of spades against clubs",
 			args{
-				[]playerCard{
+				[]data.PlayerCard{
 					{Card: data.Card{Suit: data.SuitClubs, Value: data.ValueTwo}},
 					{Card: data.Card{Suit: data.SuitClubs, Value: data.ValueThree}},
 					{Card: data.Card{Suit: data.SuitSpades, Value: data.ValueQueen}},
 				},
 			},
-			playerCard{Card: data.Card{Suit: data.SuitClubs, Value: data.ValueThree}},
+			data.PlayerCard{Card: data.Card{Suit: data.SuitClubs, Value: data.ValueThree}},
 			13,
 		},
 		{
 			"queen of spades on a hearts round",
 			args{
-				[]playerCard{
+				[]data.PlayerCard{
 					{Card: data.Card{Suit: data.SuitHearts, Value: data.ValueKing}},
 					{Card: data.Card{Suit: data.SuitHearts, Value: data.ValueAce}},
 					{Card: data.Card{Suit: data.SuitSpades, Value: data.ValueQueen}},
 				},
 			},
-			playerCard{Card: data.Card{Suit: data.SuitHearts, Value: data.ValueAce}},
+			data.PlayerCard{Card: data.Card{Suit: data.SuitHearts, Value: data.ValueAce}},
 			15,
 		},
 		{
 			"queen of spades, self inflicted",
 			args{
-				[]playerCard{
+				[]data.PlayerCard{
 					{Card: data.Card{Suit: data.SuitSpades, Value: data.ValueJack}},
 					{Card: data.Card{Suit: data.SuitSpades, Value: data.ValueTen}},
 					{Card: data.Card{Suit: data.SuitSpades, Value: data.ValueQueen}},
 				},
 			},
-			playerCard{Card: data.Card{Suit: data.SuitSpades, Value: data.ValueQueen}},
+			data.PlayerCard{Card: data.Card{Suit: data.SuitSpades, Value: data.ValueQueen}},
 			13,
 		},
 	}

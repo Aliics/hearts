@@ -1,6 +1,14 @@
 package data
 
-import "reflect"
+import (
+	"github.com/google/uuid"
+	"reflect"
+)
+
+type PlayerCard struct {
+	PlayerID uuid.UUID `json:"player"`
+	Card     `json:"card"`
+}
 
 type Card struct {
 	Suit  `json:"suit"`
