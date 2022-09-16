@@ -40,7 +40,10 @@ func Run() {
 
 func createGame(w http.ResponseWriter, _ *http.Request) {
 	id := uuid.New()
-	g := &game{inboundEvents: make(chan gameEvent)}
+	g := game{
+		playerGameEventsCh: make(chan playerGameEvent),
+		connectionEventsCh: make(chan connectionEvent),
+	}
 	games[id] = g
 
 	go g.run()
@@ -70,7 +73,7 @@ func playGame(w http.ResponseWriter, r *http.Request) {
 	defer func() { util.LogNonFatal(conn.Close()) }()
 
 	p := newPlayer(conn, uuid.New())
-	g.connectPlayer(p)
+	g.connectionEventsCh <- connectionEvent{connectionEventConnect, p}
 
 	handleWebsocketMessages(p, g)
 }

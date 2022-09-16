@@ -5,12 +5,24 @@ import (
 	"github.com/google/uuid"
 )
 
-type gameEvent struct {
+type playerGameEvent struct {
 	playerID uuid.UUID
 	event    data.InboundEvent
 }
 
-func handleWebsocketMessages(p *player, g *game) {
+type connectionEventType uint8
+
+const (
+	connectionEventConnect connectionEventType = iota
+	connectionEventDisconnect
+)
+
+type connectionEvent struct {
+	eventType connectionEventType
+	player    *player
+}
+
+func handleWebsocketMessages(p *player, g game) {
 	for !p.isClosed {
 		var ip data.InboundPayload
 		err := p.ReadJSON(&ip)
@@ -19,7 +31,7 @@ func handleWebsocketMessages(p *player, g *game) {
 			continue
 		}
 
-		g.inboundEvents <- gameEvent{p.id, ip.Data}
+		g.playerGameEventsCh <- playerGameEvent{p.id, ip.Data}
 	}
-	g.disconnectPlayer(p)
+	g.connectionEventsCh <- connectionEvent{connectionEventDisconnect, p}
 }
