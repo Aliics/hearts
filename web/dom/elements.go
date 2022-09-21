@@ -46,142 +46,153 @@ func StringLiteral(s string) Element {
 	return Element{js.ValueOf(s)}
 }
 
-func A(attributes ...ElementAttributes) func(...Element) Element {
+func A(attributes ...ElementAttribute) func(...Element) Element {
 	return attributeElement(ElementTypeA, attributes)
 }
 
-func ABBR(attributes ...ElementAttributes) func(...Element) Element {
+func ABBR(attributes ...ElementAttribute) func(...Element) Element {
 	return attributeElement(ElementTypeABBR, attributes)
 }
 
-func Address(attributes ...ElementAttributes) func(...Element) Element {
+func Address(attributes ...ElementAttribute) func(...Element) Element {
 	return attributeElement(ElementTypeAddress, attributes)
 }
 
-func Area(attributes ...ElementAttributes) func(...Element) Element {
+func Area(attributes ...ElementAttribute) func(...Element) Element {
 	return attributeElement(ElementTypeArea, attributes)
 }
 
-func B(attributes ...ElementAttributes) func(...Element) Element {
+func B(attributes ...ElementAttribute) func(...Element) Element {
 	return attributeElement(ElementTypeB, attributes)
 }
 
-func Body(attributes ...ElementAttributes) func(...Element) Element {
+func Body(attributes ...ElementAttribute) func(...Element) Element {
 	return attributeElement(ElementTypeBody, attributes)
 }
 
-func BR(attributes ...ElementAttributes) func(...Element) Element {
+func BR(attributes ...ElementAttribute) func(...Element) Element {
 	return attributeElement(ElementTypeBR, attributes)
 }
 
-func Button(attributes ...ElementAttributes) func(...Element) Element {
+func Button(attributes ...ElementAttribute) func(...Element) Element {
 	return attributeElement(ElementTypeButton, attributes)
 }
 
-func Code(attributes ...ElementAttributes) func(...Element) Element {
+func Code(attributes ...ElementAttribute) func(...Element) Element {
 	return attributeElement(ElementTypeCode, attributes)
 }
 
-func Col(attributes ...ElementAttributes) func(...Element) Element {
+func Col(attributes ...ElementAttribute) func(...Element) Element {
 	return attributeElement(ElementTypeCol, attributes)
 }
 
-func Group(attributes ...ElementAttributes) func(...Element) Element {
+func Comment(text string) Element {
+	return Element{Document.Call("createComment", text)}
+}
+
+func Group(attributes ...ElementAttribute) func(...Element) Element {
 	return attributeElement(ElementTypeColGroup, attributes)
 }
 
-func Div(attributes ...ElementAttributes) func(...Element) Element {
+func Div(attributes ...ElementAttribute) func(...Element) Element {
 	return attributeElement(ElementTypeDiv, attributes)
 }
 
-func Footer(attributes ...ElementAttributes) func(...Element) Element {
+func Empty() Element {
+	return Comment("empty")
+}
+
+func Footer(attributes ...ElementAttribute) func(...Element) Element {
 	return attributeElement(ElementTypeFooter, attributes)
 }
-func H1(attributes ...ElementAttributes) func(...Element) Element {
+func H1(attributes ...ElementAttribute) func(...Element) Element {
 	return attributeElement(ElementTypeH1, attributes)
 }
-func H2(attributes ...ElementAttributes) func(...Element) Element {
+func H2(attributes ...ElementAttribute) func(...Element) Element {
 	return attributeElement(ElementTypeH2, attributes)
 }
-func H3(attributes ...ElementAttributes) func(...Element) Element {
+func H3(attributes ...ElementAttribute) func(...Element) Element {
 	return attributeElement(ElementTypeH3, attributes)
 }
-func H4(attributes ...ElementAttributes) func(...Element) Element {
+func H4(attributes ...ElementAttribute) func(...Element) Element {
 	return attributeElement(ElementTypeH4, attributes)
 }
-func H5(attributes ...ElementAttributes) func(...Element) Element {
+func H5(attributes ...ElementAttribute) func(...Element) Element {
 	return attributeElement(ElementTypeH5, attributes)
 }
-func H6(attributes ...ElementAttributes) func(...Element) Element {
+func H6(attributes ...ElementAttribute) func(...Element) Element {
 	return attributeElement(ElementTypeH6, attributes)
 }
-func Head(attributes ...ElementAttributes) func(...Element) Element {
+func Head(attributes ...ElementAttribute) func(...Element) Element {
 	return attributeElement(ElementTypeHead, attributes)
 }
-func Header(attributes ...ElementAttributes) func(...Element) Element {
+func Header(attributes ...ElementAttribute) func(...Element) Element {
 	return attributeElement(ElementTypeHeader, attributes)
 }
 
-func Input(attributes ...ElementAttributes) func(...Element) Element {
+func Input(attributes ...ElementAttribute) func(...Element) Element {
 	return attributeElement(ElementTypeInput, attributes)
 }
 
-func Image(attributes ...ElementAttributes) func(...Element) Element {
+func Image(attributes ...ElementAttribute) func(...Element) Element {
 	return attributeElement(ElementTypeImage, attributes)
 }
 
-func IFrame(attributes ...ElementAttributes) func(...Element) Element {
+func IFrame(attributes ...ElementAttribute) func(...Element) Element {
 	return attributeElement(ElementTypeIFrame, attributes)
 }
 
-func LI(attributes ...ElementAttributes) func(...Element) Element {
+func LI(attributes ...ElementAttribute) func(...Element) Element {
 	return attributeElement(ElementTypeLI, attributes)
 }
 
-func P(attributes ...ElementAttributes) func(...Element) Element {
+func P(attributes ...ElementAttribute) func(...Element) Element {
 	return attributeElement(ElementTypeP, attributes)
 }
 
-func Pre(attributes ...ElementAttributes) func(...Element) Element {
+func Pre(attributes ...ElementAttribute) func(...Element) Element {
 	return attributeElement(ElementTypePre, attributes)
 }
 
-func Section(attributes ...ElementAttributes) func(...Element) Element {
+func Section(attributes ...ElementAttribute) func(...Element) Element {
 	return attributeElement(ElementTypeSection, attributes)
 }
 
-func Span(attributes ...ElementAttributes) func(...Element) Element {
+func Span(attributes ...ElementAttribute) func(...Element) Element {
 	return attributeElement(ElementTypeSpan, attributes)
 }
 
-func Table(attributes ...ElementAttributes) func(...Element) Element {
+func Table(attributes ...ElementAttribute) func(...Element) Element {
 	return attributeElement(ElementTypeTable, attributes)
 }
 
-func TD(attributes ...ElementAttributes) func(...Element) Element {
+func TD(attributes ...ElementAttribute) func(...Element) Element {
 	return attributeElement(ElementTypeTD, attributes)
 }
 
-func THead(attributes ...ElementAttributes) func(...Element) Element {
+func THead(attributes ...ElementAttribute) func(...Element) Element {
 	return attributeElement(ElementTypeTHead, attributes)
 }
 
-func Title(attributes ...ElementAttributes) func(...Element) Element {
+func Title(attributes ...ElementAttribute) func(...Element) Element {
 	return attributeElement(ElementTypeTitle, attributes)
 }
 
-func TR(attributes ...ElementAttributes) func(...Element) Element {
+func TR(attributes ...ElementAttribute) func(...Element) Element {
 	return attributeElement(ElementTypeTR, attributes)
 }
 
-func UL(attributes ...ElementAttributes) func(...Element) Element {
+func UL(attributes ...ElementAttribute) func(...Element) Element {
 	return attributeElement(ElementTypeUL, attributes)
 }
 
-func attributeElement(elementType ElementType, attributes []ElementAttributes) func(...Element) Element {
+func attributeElement(elementType ElementType, attributes []ElementAttribute) func(...Element) Element {
 	return func(inner ...Element) Element {
 		e := CreateElement(elementType)
 		for _, attribute := range attributes {
+			if attribute == nil {
+				continue
+			}
 			attribute.Apply(&e)
 		}
 		for _, element := range inner {

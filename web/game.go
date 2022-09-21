@@ -7,31 +7,33 @@ import (
 	"github.com/aliics/hearts/util"
 	. "github.com/aliics/hearts/web/dom"
 	"github.com/google/uuid"
-	"log"
+	"strconv"
 	"syscall/js"
 )
 
-var ws Element
+var (
+	ws              Element
+	playerID        uuid.UUID
+	currentPlayerID uuid.UUID
+	playerIDs       []uuid.UUID
+	points          = make(map[uuid.UUID]int)
+)
 
 func createGameScreen(gameID string) Element {
 	var (
-		playerId           uuid.UUID
-		currentHandElement = Div()()
-		notReadyElement    = Div()()
-		inPlayElement      = Div()()
+		notReadyElement     = Empty()
+		playersHandsElement = Empty()
+		currentHandElement  = Empty()
+		inPlayElement       = Empty()
 	)
 
 	gameElement := Div()(
-		P()(StringLiteral(fmt.Sprintf("Game ID: %s", gameID))),
-		Button()(StringLiteral("<< Exit")).
-			AddEventListener(EventTypeClick, func(js.Value, []js.Value) {
-				ws.Call("close")
-				screenChangeCh <- screenChange{screenType: screenMenu}
-			}),
-		Div(DisplayFlex)(
-			notReadyElement,
-			currentHandElement,
+		Div()(StringLiteral(fmt.Sprintf("Game ID: %s", gameID))),
+		notReadyElement,
+		Div(DisplayGrid)(
+			playersHandsElement,
 			inPlayElement,
+			currentHandElement,
 		),
 	)
 
@@ -41,57 +43,66 @@ func createGameScreen(gameID string) Element {
 		}).
 		AddEventListener(EventTypeMessage, func(_ js.Value, messages []js.Value) {
 			for _, message := range messages {
-				log.Println(message.Get("data"))
-
 				var payload data.OutboundPayload
 				util.Try0(json.Unmarshal([]byte(message.Get("data").String()), &payload))
 
 				switch event := payload.Data.(type) {
 				case data.CurrentPlayersEvent:
-					if playerId == [16]byte{} {
-						playerId = event.PlayerIDs[len(event.PlayerIDs)-1]
-						fmt.Println("Your playerID is:", playerId)
+					playerIDs = event.PlayerIDs
+					if playerID == [16]byte{} {
+						playerID = event.PlayerIDs[len(event.PlayerIDs)-1]
+						fmt.Println("Your Player ID is:", playerID)
 					}
 
 					if event.GameReady {
 						notReadyElement = notReadyElement.ReplacedWithEmpty()
+						playersHandsElement = playersHandsElement.Replaced(createPlayersHandElement())
 					} else {
+						playersHandsElement = playersHandsElement.ReplacedWithEmpty()
 						inPlayElement = inPlayElement.ReplacedWithEmpty()
 						currentHandElement = currentHandElement.ReplacedWithEmpty()
 						notReadyElement = notReadyElement.Replaced(
-							Div()(
-								P()(StringLiteral("Waiting for players")),
+							centeredModal(
+								P()(StringLiteral("Waiting for players...")),
 								P()(StringLiteral(fmt.Sprintf("Current Players: %d/3", len(event.PlayerIDs)))),
 							),
 						)
 					}
+				case data.CurrentPlayerEvent:
+					currentPlayerID = event.PlayerID
+					playersHandsElement = playersHandsElement.Replaced(createPlayersHandElement())
 				case data.NewHandEvent:
 					var innerElements []Element
-					innerElements = append(
-						innerElements,
-						P()(StringLiteral(fmt.Sprintf("Your Hand (%s)", playerId.String()))),
-					)
-
 					if len(event.Hand) > 0 {
 						for _, card := range event.Hand {
-							innerElements = append(innerElements, cardElement(card))
+							playableCard := createCardElement(card, true)
+							innerElements = append(innerElements, playableCard)
 						}
 					} else {
 						innerElements = append(innerElements, StringLiteral("Empty Hand."))
 					}
 
 					currentHandElement = currentHandElement.Replaced(
-						Div(DisplayFlex, FlexDirectionColumn)(innerElements...),
+						Div(
+							DisplayFlex,
+							PositionAttribute("absolute"),
+							WidthAttribute("100%"),
+							StyleAttribute("bottom: 0; flex-wrap: wrap; justify-content: center;"),
+						)(innerElements...),
 					)
 				case data.InPlayEvent:
 					var cardElements []Element
 					for _, card := range event.InPlay {
-						cardElements = append(cardElements, cardElement(card.Card))
+						cardElements = append(cardElements, createCardElement(card.Card, false))
 					}
 
 					inPlayElement = inPlayElement.Replaced(
-						Div()(cardElements...),
+						Div(DisplayFlex, StyleAttribute("justify-content: center;"))(cardElements...),
 					)
+				case data.PointsEvent:
+					points = event.Points
+					inPlayElement = inPlayElement.ReplacedWithEmpty()
+					playersHandsElement = playersHandsElement.Replaced(createPlayersHandElement())
 				}
 			}
 		})
@@ -99,15 +110,49 @@ func createGameScreen(gameID string) Element {
 	return gameElement
 }
 
-func cardElement(card data.Card) Element {
+func createPlayersHandElement() Element {
+	var playerHandElements []Element
+	for _, pID := range playerIDs {
+		if pID != playerID {
+			var styling BackgroundColorAttribute
+			if pID == currentPlayerID {
+				styling = "#f00"
+			}
+
+			var playerPoints int
+			if p, ok := points[pID]; ok {
+				playerPoints = p
+			}
+
+			playerHandElements = append(playerHandElements, Div(DisplayGrid, styling)(
+				Div(WidthAttribute("8em"), HeightAttribute("12em"))(
+					StringLiteral(fmt.Sprintf("PlayerID %s", pID)),
+				),
+				StringLiteral(strconv.Itoa(playerPoints)),
+			))
+		}
+	}
+	return Div(
+		DisplayFlex,
+		MarginAttribute("2em"),
+		StyleAttribute("justify-content: space-between;"),
+	)(playerHandElements...)
+}
+
+func createCardElement(card data.Card, playable bool) Element {
 	var color string
 	if card.Suit == data.SuitHearts || card.Suit == data.SuitDiamonds {
 		color = "#f00"
 	} else {
 		color = "#000"
 	}
-	return Div(ColorAttribute(color))(StringLiteral(fmt.Sprintf("%d %d", card.Suit, card.Value))).
-		AddEventListener(EventTypeClick, func(js.Value, []js.Value) {
+
+	element := Div(WidthAttribute("5em"), HeightAttribute("8em"), ColorAttribute(color))(
+		StringLiteral(fmt.Sprintf("%d %d", card.Suit, card.Value)),
+	)
+
+	if playable {
+		element.AddEventListener(EventTypeClick, func(js.Value, []js.Value) {
 			playCard, err := json.Marshal(data.InboundPayload{
 				Type: data.InboundPlayCard,
 				Data: data.PlayCardEvent{Card: card},
@@ -115,4 +160,8 @@ func cardElement(card data.Card) Element {
 			util.Try0(err)
 			ws.Call("send", string(playCard))
 		})
+		StyleAttribute("cursor: pointer;").Apply(&element)
+	}
+
+	return element
 }

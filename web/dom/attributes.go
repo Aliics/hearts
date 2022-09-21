@@ -4,7 +4,7 @@ import (
 	"strings"
 )
 
-type ElementAttributes interface {
+type ElementAttribute interface {
 	Apply(*Element)
 }
 
@@ -23,7 +23,11 @@ func (a Attribute) Apply(e *Element) {
 		}
 		elm.Set(keys[len(keys)-1], a.Value)
 	} else {
-		e.Set(a.Key, a.Value)
+		value := a.Value
+		if a.Key == "style" {
+			value = e.Get("style").Get("cssText").String() + value
+		}
+		e.Set(a.Key, value)
 	}
 }
 
@@ -73,6 +77,24 @@ type PaddingAttribute string
 
 func (p PaddingAttribute) Apply(e *Element) {
 	Attribute{"style.padding", string(p)}.Apply(e)
+}
+
+type PositionAttribute string
+
+func (p PositionAttribute) Apply(e *Element) {
+	Attribute{"style.position", string(p)}.Apply(e)
+}
+
+type BackgroundColorAttribute string
+
+func (b BackgroundColorAttribute) Apply(e *Element) {
+	Attribute{"style.background-color", string(b)}.Apply(e)
+}
+
+type BorderRadiusAttribute string
+
+func (b BorderRadiusAttribute) Apply(e *Element) {
+	Attribute{"style.border-radius", string(b)}.Apply(e)
 }
 
 type WidthAttribute string

@@ -19,10 +19,10 @@ func createMenuScreen() Element {
 			beginGame(gameIDInput.Get("value").String())
 		})
 
-	return Div(DisplayFlex, FlexDirectionColumn, MarginAttribute("auto"), WidthAttribute("fit-content"))(
+	return centeredModal(
 		Div(DisplayFlex)(gameIDInput, joinGameButton),
 
-		P(StyleAttribute("text-align: center"))(StringLiteral("or")),
+		P(StyleAttribute("text-align: center;"))(StringLiteral("or")),
 
 		Input(TypeButton, ValueAttribute("Create Game"))().
 			AddEventListener(EventTypeClick, func(js.Value, []js.Value) {

@@ -6,38 +6,23 @@ import (
 	. "github.com/aliics/hearts/web/dom"
 )
 
-type screenChange struct {
-	screenType
-	value string
-}
-
-type screenType uint8
-
-const (
-	screenMenu screenType = iota
-	screenGame
+var (
+	gameScreen = Empty()
+	menuScreen = Empty()
 )
 
-var screenChangeCh = make(chan screenChange)
-
 func Run() {
-	var gameScreen Element
-	menuScreen := createMenuScreen()
-	DocumentBody.AppendChildren(menuScreen)
+	menuScreen = createMenuScreen()
 
-	for {
-		switch c := <-screenChangeCh; c.screenType {
-		case screenMenu:
-			DocumentBody.RemoveChild(gameScreen)
-			DocumentBody.AppendChild(menuScreen)
-		case screenGame:
-			gameScreen = createGameScreen(c.value)
-			DocumentBody.RemoveChildren(menuScreen)
-			DocumentBody.AppendChild(gameScreen)
-		}
-	}
+	MarginAttribute("0").Apply(&DocumentBody)
+	DocumentBody.AppendChildren(gameScreen, menuScreen)
+
+	menuScreen = menuScreen.Replaced(createMenuScreen())
+
+	<-make(chan struct{})
 }
 
 func beginGame(gameID string) {
-	screenChangeCh <- screenChange{screenGame, gameID}
+	gameScreen.Replaced(createGameScreen(gameID))
+	menuScreen = menuScreen.ReplacedWithEmpty()
 }

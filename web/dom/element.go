@@ -13,7 +13,7 @@ func CreateElement(elementType ElementType) Element {
 }
 
 func (e Element) ReplacedWithEmpty() Element {
-	return e.Replaced(Div()())
+	return e.Replaced(Empty())
 }
 
 func (e Element) Replaced(new Element) Element {
@@ -31,9 +31,9 @@ func (e Element) Replaced(new Element) Element {
 }
 
 func (e Element) ReplaceChild(old, new Element) Element {
-	childrenCount := e.Get("childElementCount").Int()
-	for i := 0; i < childrenCount; i++ {
-		if e.Get("children").Index(i).Equal(old.Value) {
+	childNodes := e.Get("childNodes")
+	for i := 0; i < childNodes.Length(); i++ {
+		if childNodes.Index(i).Equal(old.Value) {
 			e.Call("replaceChild", new.Value, old.Value)
 			return e
 		}
@@ -43,9 +43,9 @@ func (e Element) ReplaceChild(old, new Element) Element {
 }
 
 func (e Element) RemoveChild(child Element) Element {
-	childrenCount := e.Get("childElementCount").Int()
-	for i := 0; i < childrenCount; i++ {
-		if e.Get("children").Index(i).Equal(child.Value) {
+	childNodes := e.Get("childNodes")
+	for i := 0; i < childNodes.Length(); i++ {
+		if childNodes.Index(i).Equal(child.Value) {
 			e.Call("removeChild", child.Value)
 			return e
 		}
