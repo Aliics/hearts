@@ -7,3 +7,9 @@ func LogNonFatal(err error) {
 		log.Println(err)
 	}
 }
+
+func Try0(err error) {
+	if err != nil {
+		log.Panic(err)
+	}
+}

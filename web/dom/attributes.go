@@ -57,6 +57,12 @@ func (c ClassAttribute) Apply(e *Element) {
 	Attribute{"class", string(c)}.Apply(e)
 }
 
+type ColorAttribute string
+
+func (c ColorAttribute) Apply(e *Element) {
+	Attribute{"style.color", string(c)}.Apply(e)
+}
+
 type MarginAttribute string
 
 func (m MarginAttribute) Apply(e *Element) {

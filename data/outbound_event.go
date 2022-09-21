@@ -48,11 +48,11 @@ func (o *OutboundPayload) UnmarshalJSON(bytes []byte) (err error) {
 	case OutboundCurrentPlayer:
 		err = setOutboundData[CurrentPlayerEvent](o, dataBytes)
 	case OutboundInPlay:
-		err = setOutboundData[OutboundEvent](o, dataBytes)
+		err = setOutboundData[InPlayEvent](o, dataBytes)
 	case OutboundCurrentPlayers:
 		err = setOutboundData[CurrentPlayersEvent](o, dataBytes)
 	case OutboundPoints:
-		err = setOutboundData[OutboundEvent](o, dataBytes)
+		err = setOutboundData[PointsEvent](o, dataBytes)
 	default:
 		return errors.New(fmt.Sprintf("%s is not a valid type", typeString))
 	}
